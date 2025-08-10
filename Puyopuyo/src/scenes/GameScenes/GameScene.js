@@ -38,36 +38,42 @@ boardData.forEach((row, y) => {
     });
 });
 
-// PuyoLogicから現在のぷよの情報を取得
+// --- 操作ぷよを描画 ---
 const puyoData = PuyoLogic.currentPuyo;
 
-// 1つ目のぷよ（軸ぷよ）を描画
-const puyo1X = BOARD_OFFSET_X + puyoData.x * TILE_SIZE;
-const puyo1Y = BOARD_OFFSET_Y + puyoData.y * TILE_SIZE;
-this.add.circle(puyo1X, puyo1Y, TILE_SIZE / 2, puyoColors[puyoData.color1]);
+// ぷよの絵を作成し、this.puyo1, this.puyo2 に保存する
+this.puyo1 = this.add.circle(0, 0, TILE_SIZE / 2, puyoColors[puyoData.color1]);
+this.puyo2 = this.add.circle(0, 0, TILE_SIZE / 2, puyoColors[puyoData.color2]);
 
-// 2つ目のぷよ（子ぷよ）を描画 (今はとりあえず軸ぷよのすぐ上に描画)
-const puyo2X = puyo1X;
-const puyo2Y = puyo1Y - TILE_SIZE;
-this.add.circle(puyo2X, puyo2Y, TILE_SIZE / 2, puyoColors[puyoData.color2]);
+// --- キーボード設定 ---
+this.cursors = this.input.keyboard.createCursorKeys();
 
 
 this.cursors = this.input.keyboard.createCursorKeys();
 
 }
 update() {
-  // 左キーが「押された瞬間」をチェック
+  // --- キー入力の処理 ---
   if (Phaser.Input.Keyboard.JustDown(this.cursors.left)) {
-    PuyoLogic.movePuyoLeft(); // PuyoLogicの関数を呼び出す
-    console.log('左に移動！ 新しいX座標:', PuyoLogic.currentPuyo.x);
-  }
-  // 右キーが「押された瞬間」をチェック
-  else if (Phaser.Input.Keyboard.JustDown(this.cursors.right)) {
-    PuyoLogic.movePuyoRight(); // PuyoLogicの関数を呼び出す
-    console.log('右に移動！ 新しいX座標:', PuyoLogic.currentPuyo.x);
+    PuyoLogic.movePuyoLeft();
+  } else if (Phaser.Input.Keyboard.JustDown(this.cursors.right)) {
+    PuyoLogic.movePuyoRight();
   }
 
-  // TODO: ここに、ぷよを再描画する処理を後で追加する
+  // --- ぷよのデータに合わせて、絵の位置を更新 ---
+  const puyoData = PuyoLogic.currentPuyo;
+  const puyoColors = { 1: 0xff0000, 2: 0x00ff00, 3: 0x0000ff }; // createから移動または再定義
+  const TILE_SIZE = 40;
+  const BOARD_OFFSET_X = 100;
+  const BOARD_OFFSET_Y = 50;
+
+  // 1つ目のぷよの位置を更新
+  this.puyo1.x = BOARD_OFFSET_X + puyoData.x * TILE_SIZE;
+  this.puyo1.y = BOARD_OFFSET_Y + puyoData.y * TILE_SIZE;
+  
+  // 2つ目のぷよの位置を更新（今は軸ぷよのすぐ上）
+  this.puyo2.x = this.puyo1.x;
+  this.puyo2.y = this.puyo1.y - TILE_SIZE;
 }
 
 
