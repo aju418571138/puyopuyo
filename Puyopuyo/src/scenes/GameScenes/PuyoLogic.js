@@ -1,3 +1,7 @@
+export class Grid {
+    
+}
+
 // 盤面のサイズを定義
 const BOARD_WIDTH = 6;
 const BOARD_HEIGHT = 12;
