@@ -1,6 +1,35 @@
 //盤面に関するあらゆる操作ロジックをまとめたクラスを作ります
 export class Board {
-    
+    constructor({
+        // 盤面のサイズや、ぷよの色数、マスのサイズなどのデフォルト値を設定
+        width = 6,
+        height = 14,
+        colors = [
+            "#FF0000", // 赤
+            "#00FF00", // 緑
+            "#0000FF", // 青
+            "#FFFF00", // 黄
+        ],
+        size = 40,
+        offsetX = 100,
+        offsetY = 50,
+        deadTiles = [{x:2, y:12}] //ここにぷよがたまったらゲームオーバー
+    }={}){
+        this.width = width; // 盤面の列数
+        this.height = height; // 盤面の行数
+        this.colors = colors; // ぷよの色の配列
+        this.size = size; // 1マスのサイズ
+        this.offsetX = offsetX; // 盤面のX座標オフセット(盤面左端の座標)
+        this.offsetY = offsetY; // 盤面のY座標オフセット
+        this.board = Array(height).fill(null).map(() => Array(width).fill(0));
+        currentPuyo = {
+            x: 2,
+            y: 0,
+            color1: 1,
+            color2: 2,
+            rotation:0
+        };
+    }
 }
 
 // 盤面のサイズを定義
