@@ -79,9 +79,11 @@ update() {
   const BOARD_OFFSET_X = 100;
   const BOARD_OFFSET_Y = 50;
   
-  // --- 操作ぷよの描画更新 ---
+  // 軸ぷよの位置を更新
   this.puyo1.x = BOARD_OFFSET_X + puyoData.x * TILE_SIZE;
   this.puyo1.y = BOARD_OFFSET_Y + puyoData.y * TILE_SIZE;
+  this.puyo1.setFillStyle(puyoColors[puyoData.color1]); // ✨この行を追加
+
   // (回転部分のコードは省略... 前回のままでOK)
   switch (puyoData.rotation) {
     case 0: this.puyo2.x = this.puyo1.x; this.puyo2.y = this.puyo1.y - TILE_SIZE; break;
@@ -89,6 +91,7 @@ update() {
     case 2: this.puyo2.x = this.puyo1.x; this.puyo2.y = this.puyo1.y + TILE_SIZE; break;
     case 3: this.puyo2.x = this.puyo1.x - TILE_SIZE; this.puyo2.y = this.puyo1.y; break;
   }
+  this.puyo2.setFillStyle(puyoColors[puyoData.color2]);
   
   // --- ✨着地したぷよの描画 ---
   // 1. まず古いぷよを全部消す

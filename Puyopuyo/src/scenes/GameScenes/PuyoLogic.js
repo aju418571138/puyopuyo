@@ -20,39 +20,66 @@ export let currentPuyo = {
 
 // ゲームのロジックに関する関数は、今後ここに追加していく
 
-/**
- * ぷよを左に1マス動かす関数
- */
+// PuyoLogic.js の4つの関数を置き換え
 export function movePuyoLeft() {
-  // 壁にぶつからないかチェック
-  if (currentPuyo.x > 0) {
+  const { x, y, rotation } = currentPuyo;
+  if (isPositionValid(x - 1, y, rotation)) {
     currentPuyo.x--;
   }
 }
 
-/**
- * ぷよを右に1マス動かす関数
- */
 export function movePuyoRight() {
-  // 壁にぶつからないかチェック
-  if (currentPuyo.x < BOARD_WIDTH - 1) {
+  const { x, y, rotation } = currentPuyo;
+  if (isPositionValid(x + 1, y, rotation)) {
     currentPuyo.x++;
   }
 }
 
-/**
- * ぷよを時計回りに90度回転させる関数
- */
 export function rotatePuyo() {
-  currentPuyo.rotation = (currentPuyo.rotation + 1) % 4;
+  const { x, y, rotation } = currentPuyo;
+  const newRotation = (rotation + 1) % 4;
+  if (isPositionValid(x, y, newRotation)) {
+    currentPuyo.rotation = newRotation;
+  }
 }
 
-/**
- * ぷよを反時計回りに90度回転させる関数
- */
 export function rotatePuyoCounterClockwise() {
-  // 0から-1になった時に、ちゃんと3に戻すための計算
-  currentPuyo.rotation = (currentPuyo.rotation - 1 + 4) % 4;
+  const { x, y, rotation } = currentPuyo;
+  const newRotation = (rotation - 1 + 4) % 4;
+  if (isPositionValid(x, y, newRotation)) {
+    currentPuyo.rotation = newRotation;
+  }
+}
+
+// PuyoLogic.js の checkCollision 関数の上あたりに追加
+
+/**
+ * 指定した位置・回転でぷよが存在できるかチェックする関数
+ * @param {number} x - 軸ぷよのX座標
+ * @param {number} y - 軸ぷよのY座標
+ * @param {number} rotation - ぷよの回転状態
+ * @returns {boolean} - 配置可能ならtrue
+ */
+function isPositionValid(x, y, rotation) {
+  // 軸ぷよの位置をチェック
+  if (checkCollision(x, y)) return false;
+
+  // 子ぷよの位置をチェック
+  switch (rotation) {
+    case 0: // 上
+      if (checkCollision(x, y - 1)) return false;
+      break;
+    case 1: // 右
+      if (checkCollision(x + 1, y)) return false;
+      break;
+    case 2: // 下
+      if (checkCollision(x, y + 1)) return false;
+      break;
+    case 3: // 左
+      if (checkCollision(x - 1, y)) return false;
+      break;
+  }
+  return true; // どこにも衝突しなければOK
 }
 
 /**
@@ -63,7 +90,7 @@ export function rotatePuyoCounterClockwise() {
  */
 function checkCollision(puyoX, puyoY) {
   // 盤面の範囲外かどうかをチェック
-  if (puyoX < 0 || puyoX >= BOARD_WIDTH || puyoY >= BOARD_HEIGHT) {
+  if (puyoX < 0 || puyoX >= BOARD_WIDTH || puyoY < 0 || puyoY >= BOARD_HEIGHT) { // ✨ puyoY < 0 のチェックを追加！
     return true; // 壁や床に衝突
   }
   // 盤面にすでにぷよがあるかをチェック
@@ -88,8 +115,17 @@ function landPuyo() {
     case 3: board[y][x - 1] = color2; break;
   }
 
-  // ✨着地後に、ぷよを消す処理を呼び出す
-  checkAndClearPuyos();
+  // ✨連鎖処理ループ
+  while (true) {
+    const cleared = checkAndClearPuyos();
+    if (cleared) {
+      // ぷよが消えたら、重力を適用してぷよを落とす
+      applyGravity();
+    } else {
+      // 何も消えなくなったらループを抜ける
+      break;
+    }
+  }
 }
 
 /**
@@ -109,6 +145,27 @@ function spawnNewPuyo() {
 export function fallOneStep() {
   const { x, y, rotation } = currentPuyo;
   let isCollided = false;
+
+/**
+ * 指定した位置・回転でぷよが存在できるかチェックする関数
+ * @param {number} x - 軸ぷよのX座標
+ * @param {number} y - 軸ぷよのY座標
+ * @param {number} rotation - ぷよの回転状態
+ * @returns {boolean} - 配置可能ならtrue
+ */
+function isPositionValid(x, y, rotation) {
+  // 軸ぷよの位置をチェック
+  if (checkCollision(x, y)) return false;
+
+  // 子ぷよの位置をチェック
+  switch (rotation) {
+    case 0: if (checkCollision(x, y - 1)) return false; break;
+    case 1: if (checkCollision(x + 1, y)) return false; break;
+    case 2: if (checkCollision(x, y + 1)) return false; break;
+    case 3: if (checkCollision(x - 1, y)) return false; break;
+  }
+  return true; // どこにも衝突しなければOK
+}
 
   // 軸ぷよと子ぷよ、両方の着地先をチェック
   if (checkCollision(x, y + 1)) {
@@ -194,9 +251,42 @@ function checkAndClearPuyos() {
     }
   }
 
-  // 消すべきぷよを盤面データから消す（0にする）
-  puyosToClear.forEach(key => {
-    const [x, y] = key.split(',').map(Number);
-    board[y][x] = 0;
-  });
+  // 消すべきぷよがあるかチェック
+  if (puyosToClear.size > 0) {
+    puyosToClear.forEach(key => {
+      const [x, y] = key.split(',').map(Number);
+      board[y][x] = 0;
+    });
+    return true; // ✨ぷよを消したのでtrueを返す
+  }
+
+  return false; // ✨何も消えなかったのでfalseを返す
+}
+
+/**
+ * ぷよが消えた後、空中に浮いているぷよを下に落とす関数
+ */
+function applyGravity() {
+  // 各列を一番下からチェック
+  for (let x = 0; x < BOARD_WIDTH; x++) {
+    let emptyRow = -1;
+    // 下から上に見て、最初に空のマスを見つける
+    for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
+      if (board[y][x] === 0) {
+        emptyRow = y;
+        break;
+      }
+    }
+
+    // 空のマスが見つかったら、それより上にあるぷよを下に詰める
+    if (emptyRow !== -1) {
+      for (let y = emptyRow - 1; y >= 0; y--) {
+        if (board[y][x] !== 0) {
+          board[emptyRow][x] = board[y][x];
+          board[y][x] = 0;
+          emptyRow--;
+        }
+      }
+    }
+  }
 }
