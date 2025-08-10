@@ -56,6 +56,8 @@ this.fallTimer = this.time.addEvent({
   loop: true, // ずっと繰り返す
 });
 
+this.boardPuyoGroup = this.add.group();
+
 }
 
 update() {
@@ -65,44 +67,45 @@ update() {
   } else if (Phaser.Input.Keyboard.JustDown(this.cursors.right)) {
     PuyoLogic.movePuyoRight();
   } else if (Phaser.Input.Keyboard.JustDown(this.cursors.up)) {
-    PuyoLogic.rotatePuyo(); // 時計回り
-  } else if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) { // ✨下矢印キーの処理を追加
-    PuyoLogic.rotatePuyoCounterClockwise(); // 反時計回り
+    PuyoLogic.rotatePuyo();
+  } else if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) {
+    PuyoLogic.rotatePuyoCounterClockwise();
   }
 
-  // --- ぷよのデータに合わせて、絵の位置を更新 ---
-  // (この部分は前回のまま変更ありません)
+  // --- 定義（毎回使うのでupdate内に書く） ---
   const puyoData = PuyoLogic.currentPuyo;
   const puyoColors = { 1: 0xff0000, 2: 0x00ff00, 3: 0x0000ff };
   const TILE_SIZE = 40;
   const BOARD_OFFSET_X = 100;
   const BOARD_OFFSET_Y = 50;
-
-  // 軸ぷよの位置を更新
+  
+  // --- 操作ぷよの描画更新 ---
   this.puyo1.x = BOARD_OFFSET_X + puyoData.x * TILE_SIZE;
   this.puyo1.y = BOARD_OFFSET_Y + puyoData.y * TILE_SIZE;
-  
-  // 回転状態に合わせて、子ぷよの位置を決める
+  // (回転部分のコードは省略... 前回のままでOK)
   switch (puyoData.rotation) {
-    case 0: // 上
-      this.puyo2.x = this.puyo1.x;
-      this.puyo2.y = this.puyo1.y - TILE_SIZE;
-      break;
-    case 1: // 右
-      this.puyo2.x = this.puyo1.x + TILE_SIZE;
-      this.puyo2.y = this.puyo1.y;
-      break;
-    case 2: // 下
-      this.puyo2.x = this.puyo1.x;
-      this.puyo2.y = this.puyo1.y + TILE_SIZE;
-      break;
-    case 3: // 左
-      this.puyo2.x = this.puyo1.x - TILE_SIZE;
-      this.puyo2.y = this.puyo1.y;
-      break;
+    case 0: this.puyo2.x = this.puyo1.x; this.puyo2.y = this.puyo1.y - TILE_SIZE; break;
+    case 1: this.puyo2.x = this.puyo1.x + TILE_SIZE; this.puyo2.y = this.puyo1.y; break;
+    case 2: this.puyo2.x = this.puyo1.x; this.puyo2.y = this.puyo1.y + TILE_SIZE; break;
+    case 3: this.puyo2.x = this.puyo1.x - TILE_SIZE; this.puyo2.y = this.puyo1.y; break;
   }
+  
+  // --- ✨着地したぷよの描画 ---
+  // 1. まず古いぷよを全部消す
+  this.boardPuyoGroup.clear(true, true);
+  
+  // 2. 盤面データをもとに、新しいぷよを描画する
+  const boardData = PuyoLogic.board;
+  boardData.forEach((row, y) => {
+    row.forEach((cell, x) => {
+      if (cell > 0) { // 0より大きい（＝ぷよがある）マスだけ描画
+        const puyoX = BOARD_OFFSET_X + x * TILE_SIZE;
+        const puyoY = BOARD_OFFSET_Y + y * TILE_SIZE;
+        const puyoColor = puyoColors[cell];
+        // グループに新しいぷよ（円）を追加する
+        this.boardPuyoGroup.add(this.add.circle(puyoX, puyoY, TILE_SIZE / 2, puyoColor));
+      }
+    });
+  });
 }
-
-
 }
-
