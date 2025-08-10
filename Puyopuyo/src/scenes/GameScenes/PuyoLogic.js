@@ -14,7 +14,8 @@ export let currentPuyo = {
   x: 2,
   y: 0,
   color1: 1,
-  color2: 2
+  color2: 2,
+  rotation:0, 
 };
 
 // ゲームのロジックに関する関数は、今後ここに追加していく
@@ -37,4 +38,19 @@ export function movePuyoRight() {
   if (currentPuyo.x < BOARD_WIDTH - 1) {
     currentPuyo.x++;
   }
+}
+
+/**
+ * ぷよを時計回りに90度回転させる関数
+ */
+export function rotatePuyo() {
+  currentPuyo.rotation = (currentPuyo.rotation + 1) % 4;
+}
+
+/**
+ * ぷよを反時計回りに90度回転させる関数
+ */
+export function rotatePuyoCounterClockwise() {
+  // 0から-1になった時に、ちゃんと3に戻すための計算
+  currentPuyo.rotation = (currentPuyo.rotation - 1 + 4) % 4;
 }

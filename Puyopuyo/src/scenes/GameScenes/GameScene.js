@@ -52,28 +52,50 @@ this.cursors = this.input.keyboard.createCursorKeys();
 this.cursors = this.input.keyboard.createCursorKeys();
 
 }
+
 update() {
   // --- キー入力の処理 ---
   if (Phaser.Input.Keyboard.JustDown(this.cursors.left)) {
     PuyoLogic.movePuyoLeft();
   } else if (Phaser.Input.Keyboard.JustDown(this.cursors.right)) {
     PuyoLogic.movePuyoRight();
+  } else if (Phaser.Input.Keyboard.JustDown(this.cursors.up)) {
+    PuyoLogic.rotatePuyo(); // 時計回り
+  } else if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) { // ✨下矢印キーの処理を追加
+    PuyoLogic.rotatePuyoCounterClockwise(); // 反時計回り
   }
 
   // --- ぷよのデータに合わせて、絵の位置を更新 ---
+  // (この部分は前回のまま変更ありません)
   const puyoData = PuyoLogic.currentPuyo;
-  const puyoColors = { 1: 0xff0000, 2: 0x00ff00, 3: 0x0000ff }; // createから移動または再定義
+  const puyoColors = { 1: 0xff0000, 2: 0x00ff00, 3: 0x0000ff };
   const TILE_SIZE = 40;
   const BOARD_OFFSET_X = 100;
   const BOARD_OFFSET_Y = 50;
 
-  // 1つ目のぷよの位置を更新
+  // 軸ぷよの位置を更新
   this.puyo1.x = BOARD_OFFSET_X + puyoData.x * TILE_SIZE;
   this.puyo1.y = BOARD_OFFSET_Y + puyoData.y * TILE_SIZE;
   
-  // 2つ目のぷよの位置を更新（今は軸ぷよのすぐ上）
-  this.puyo2.x = this.puyo1.x;
-  this.puyo2.y = this.puyo1.y - TILE_SIZE;
+  // 回転状態に合わせて、子ぷよの位置を決める
+  switch (puyoData.rotation) {
+    case 0: // 上
+      this.puyo2.x = this.puyo1.x;
+      this.puyo2.y = this.puyo1.y - TILE_SIZE;
+      break;
+    case 1: // 右
+      this.puyo2.x = this.puyo1.x + TILE_SIZE;
+      this.puyo2.y = this.puyo1.y;
+      break;
+    case 2: // 下
+      this.puyo2.x = this.puyo1.x;
+      this.puyo2.y = this.puyo1.y + TILE_SIZE;
+      break;
+    case 3: // 左
+      this.puyo2.x = this.puyo1.x - TILE_SIZE;
+      this.puyo2.y = this.puyo1.y;
+      break;
+  }
 }
 
 
