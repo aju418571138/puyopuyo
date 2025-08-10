@@ -48,8 +48,13 @@ this.puyo2 = this.add.circle(0, 0, TILE_SIZE / 2, puyoColors[puyoData.color2]);
 // --- キーボード設定 ---
 this.cursors = this.input.keyboard.createCursorKeys();
 
-
-this.cursors = this.input.keyboard.createCursorKeys();
+// --- 自動落下タイマー ---
+this.fallTimer = this.time.addEvent({
+  delay: 1000, // 1000ミリ秒（1秒）ごとに
+  callback: PuyoLogic.fallOneStep, // PuyoLogicの落下関数を呼び出す
+  callbackScope: this,
+  loop: true, // ずっと繰り返す
+});
 
 }
 
