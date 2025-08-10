@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import StartScene from './scenes/MenuScenes/StartScene.js';
 
 // ゲームの設定オブジェクト
 const config = {
@@ -13,7 +14,7 @@ const config = {
     },
   },
   // 使用するシーンのリスト
-  scene: [
+  scene: [StartScene
   ]
 };
 
