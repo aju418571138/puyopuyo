@@ -15,8 +15,7 @@ const config = {
     },
   },
   // 使用するシーンのリスト
-  scene: [StartScene, GameScene
-  ]
+  scene: [StartScene, GameScene]
 };
 
 // ゲームインスタンスを生成
