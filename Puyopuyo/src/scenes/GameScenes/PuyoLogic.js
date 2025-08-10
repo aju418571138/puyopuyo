@@ -1,4 +1,5 @@
-export class Grid {
+//盤面に関するあらゆる操作ロジックをまとめたクラスを作ります
+export class Board {
     
 }
 
