@@ -21,6 +21,7 @@ export class Board {
         this.size = size; // 1マスのサイズ
         this.offsetX = offsetX; // 盤面のX座標オフセット(盤面左端の座標)
         this.offsetY = offsetY; // 盤面のY座標オフセット
+        this.deadTiles = deadTiles; // ゲームオーバーの条件となるぷよの位置
         this.board = Array(height).fill(null).map(() => Array(width).fill(0));
         currentPuyo = {
             x: 2,
