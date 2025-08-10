@@ -1,4 +1,4 @@
 import Phaser from 'phaser';
-export default class GameScene extends Phaser.Scene{
+export default class PuyopuyoLogic extends Phaser.Scene{
     
 }
