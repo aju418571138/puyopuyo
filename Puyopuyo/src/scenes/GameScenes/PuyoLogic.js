@@ -79,16 +79,17 @@ function checkCollision(puyoX, puyoY) {
 function landPuyo() {
   const { x, y, color1, color2, rotation } = currentPuyo;
   
-  // 軸ぷよを盤面に書き込む
+  // 軸ぷよと子ぷよを盤面に書き込む
   board[y][x] = color1;
-  
-  // 子ぷよを盤面に書き込む
   switch (rotation) {
     case 0: board[y - 1][x] = color2; break;
     case 1: board[y][x + 1] = color2; break;
     case 2: board[y + 1][x] = color2; break;
     case 3: board[y][x - 1] = color2; break;
   }
+
+  // ✨着地後に、ぷよを消す処理を呼び出す
+  checkAndClearPuyos();
 }
 
 /**
@@ -128,4 +129,74 @@ export function fallOneStep() {
     // 衝突しなければ、1マス下に動かす
     currentPuyo.y++;
   }
+}
+
+/**
+ * (x, y)から繋がっている同じ色のぷよのグループを探す関数
+ * @param {number} startX - 探索を開始するX座標
+ * @param {number} startY - 探索を開始するY座標
+ * @returns {Array} - 繋がっているぷよの座標リスト [{x, y}, ...]
+ */
+function findConnectedPuyos(startX, startY) {
+  const targetColor = board[startY][startX];
+  if (targetColor === 0) return []; // 空の場所からは探さない
+
+  const connected = []; // 繋がっているぷよのリスト
+  const queue = [{ x: startX, y: startY }]; // 探索待ちのリスト
+  const visited = new Set([`${startX},${startY}`]); // チェック済みの座標を記録
+
+  while (queue.length > 0) {
+    const { x, y } = queue.shift(); // 先頭を取り出す
+    connected.push({ x, y });
+
+    // 上下左右の4方向をチェック
+    const neighbors = [
+      { x, y: y - 1 }, // 上
+      { x, y: y + 1 }, // 下
+      { x: x - 1, y }, // 左
+      { x: x + 1, y }, // 右
+    ];
+
+    for (const neighbor of neighbors) {
+      const nx = neighbor.x;
+      const ny = neighbor.y;
+      const key = `${nx},${ny}`;
+
+      // 盤面の外か、既にチェック済みか、色が違う場合はスキップ
+      if (nx < 0 || nx >= BOARD_WIDTH || ny < 0 || ny >= BOARD_HEIGHT || visited.has(key) || board[ny][nx] !== targetColor) {
+        continue;
+      }
+
+      visited.add(key);
+      queue.push({ x: nx, y: ny });
+    }
+  }
+  return connected;
+}
+
+/**
+ * 盤面全体をチェックして、4つ以上繋がっているぷよを消す関数
+ */
+function checkAndClearPuyos() {
+  const puyosToClear = new Set();
+  const checked = new Set();
+
+  for (let y = 0; y < BOARD_HEIGHT; y++) {
+    for (let x = 0; x < BOARD_WIDTH; x++) {
+      const key = `${x},${y}`;
+      if (board[y][x] !== 0 && !checked.has(key)) {
+        const connected = findConnectedPuyos(x, y);
+        if (connected.length >= 4) {
+          connected.forEach(puyo => puyosToClear.add(`${puyo.x},${puyo.y}`));
+        }
+        connected.forEach(puyo => checked.add(`${puyo.x},${puyo.y}`));
+      }
+    }
+  }
+
+  // 消すべきぷよを盤面データから消す（0にする）
+  puyosToClear.forEach(key => {
+    const [x, y] = key.split(',').map(Number);
+    board[y][x] = 0;
+  });
 }
