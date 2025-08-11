@@ -1,4 +1,4 @@
-//盤面に関するあらゆる操作ロジックをまとめたクラスを作ります
+//ぷよぷよのコア機能をまとめたクラス
 export default class Board {
   /**
    * @param {object} options - 盤面の設定オプション
