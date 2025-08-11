@@ -4,7 +4,7 @@ export default class PuyoView {
         this.scene = scene; // Phaserのシーン
         this.PuyoLogic = PuyoLogic; // PuyoLogicのインスタンス
         // 盤面データ（二次元配列）を元に、マス目を描画する
-        this.PuyoLogic.board((row, y) => {
+        this.PuyoLogic.board.forEach((row, y) => {
             row.forEach((cell, x) => {
                 // マス目の座標を計算
                 const tileX = this.PuyoLogic.offsetX + x * this.PuyoLogic.size;
