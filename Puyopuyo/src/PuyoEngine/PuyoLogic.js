@@ -15,10 +15,11 @@ export default class PuyoLogic {
       width = 6,
       height = 12,
       colors = [
-        "#FF0000", // 赤
-        "#00FF00", // 緑
-        "#0000FF", // 青
-        "#FFFF00", // 黄
+        0x000000, // 空マス
+        0xFF0000, // 赤
+        0x00FF00, // 緑
+        0x0000FF, // 青
+        0xFFFF00, // 黄
       ],
       size = 40,
       offsetX = 100,
@@ -168,7 +169,7 @@ export default class PuyoLogic {
 
       this.currentPuyo = {
         x: 2,        // 盤面の中央上部
-        y: 0,        // 盤面の見えないエリアから出現
+        y: 1,        // 盤面の見えないエリアから出現
         rotation: 0, // 0:上, 1:右, 2:下, 3:左
         color1: color1,
         color2: color2,

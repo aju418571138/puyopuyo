@@ -50,6 +50,11 @@ export default class PuyoView {
         }
         this.puyo2.setFillStyle(puyoColors[puyoData.color2]);
 
+        // --- 操作ぷよの深度を設定 ---
+        // 操作ぷよの深度を設定して、他のオブジェクトより前面に表示する
+        this.puyo1.setDepth(10);
+        this.puyo2.setDepth(10);
+        console.log(`操作ぷよの位置: (${this.puyo1.x}, ${this.puyo1.y}), (${this.puyo2.x}, ${this.puyo2.y})操作ぷよの色: ${puyoColors[puyoData.color1]}, ${puyoColors[puyoData.color2]}`);
         // --- 着地したぷよの描画 ---
         // 1. まず古いぷよを全部消す
         this.boardPuyoGroup.clear(true, true);
@@ -63,7 +68,7 @@ export default class PuyoView {
                 const puyoY = BOARD_OFFSET_Y + y * TILE_SIZE;
                 const puyoColor = puyoColors[cell];
                 // グループに新しいぷよ（円）を追加する
-                this.scene.boardPuyoGroup.add(this.add.circle(puyoX, puyoY, TILE_SIZE / 2, puyoColor));
+                this.boardPuyoGroup.add(this.scene.add.circle(puyoX, puyoY, TILE_SIZE / 2, puyoColor));
             }
             });
         });
