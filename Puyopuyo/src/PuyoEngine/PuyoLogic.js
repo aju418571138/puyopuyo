@@ -1,5 +1,5 @@
 //ぷよぷよのコア機能をまとめたクラス
-export default class Board {
+export default class PuyoLogic {
   /**
    * @param {object} options - 盤面の設定オプション
    * @param {number} [options.width=6] - 盤面の列数

@@ -1,7 +1,10 @@
 //盤面の描画に関するクラス
 export default class PuyoView {
-    constructor(scene, board) {
+    constructor(scene, PuyoLogic) {
         this.scene = scene; // Phaserのシーン
-        this.board = board; // Boardクラスのインスタンス
+        this.PuyoLogic = PuyoLogic; // PuyoLogicのインスタンス
+    }
+    update(){
+
     }
 }

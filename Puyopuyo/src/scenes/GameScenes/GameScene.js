@@ -1,5 +1,8 @@
 import Phaser from 'phaser';
-import Board from '../../PuyoEngine/PuyoLogic.js';
+import PuyoLogic from '../../PuyoEngine/PuyoLogic.js';
+import PuyoController from '../../PuyoEngine/PuyoController.js';
+import PuyoView from '../../PuyoEngine/PuyoView.js';
+
 export default class GameScene extends Phaser.Scene{
     constructor(){
         super({ key: 'GameScene' });
@@ -8,7 +11,9 @@ export default class GameScene extends Phaser.Scene{
         // ここで必要なアセットをプリロードする
     }
     create(){
-      const board1 = new Board();
+      const PuyoLogic = new PuyoLogic();// PuyoLogicのインスタンスを生成
+      const PuyoController = new PuyoController(this.input, PuyoLogic);// PuyoControllerのインスタンスを生成
+      const PuyoView = new PuyoView(this, PuyoLogic);// PuyoViewのインスタンスを生成
 /*
       // マス1つのサイズや、盤面の表示位置を決める
       const TILE_SIZE = 40; // 1マスのサイズ（ピクセル）
@@ -63,6 +68,9 @@ export default class GameScene extends Phaser.Scene{
     }
 
     update() {
+      PuyoController.update(); // PuyoControllerの更新-常に操作を受け付ける
+      PuyoView.update(); // PuyoViewの更新-常に描画
+
       // --- キー入力の処理 ---
       if (Phaser.Input.Keyboard.JustDown(this.cursors.left)) {
         PuyoLogic.movePuyoLeft();
