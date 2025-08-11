@@ -1,6 +1,9 @@
 import Phaser from 'phaser';
-import StartScene from './scenes/MenuScenes/StartScene.js';
 import GameScene from './scenes/GameScenes/GameScene.js';
+import TitleScene from './scenes/MenuScenes/TitleScene.js';
+import ModeSelectScene from './scenes/MenuScenes/ModeSelectScene.js';
+import SinglePlayMenuScene from './scenes/MenuScenes/SinglePlayMenuScene.js';
+import OnlineMenuScene from './scenes/MenuScenes/OnlineMenuScene.js';
 
 // ゲームの設定オブジェクト
 const config = {
@@ -15,7 +18,7 @@ const config = {
     },
   },
   // 使用するシーンのリスト
-  scene: [StartScene, GameScene]
+  scene: [TitleScene, ModeSelectScene, SinglePlayMenuScene, OnlineMenuScene, GameScene]
 };
 
 // ゲームインスタンスを生成
