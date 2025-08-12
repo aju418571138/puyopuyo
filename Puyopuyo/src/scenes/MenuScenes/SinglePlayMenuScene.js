@@ -28,6 +28,7 @@ export default class SinglePlayMenuScene extends Phaser.Scene {
     }).setOrigin(0.5).setInteractive();
     practiceButton.on('pointerdown', () => {
       this.scene.start('GameScene'); // ゲーム本編を開始
+      console.log('練習プレイを開始します'); // コンソールにメッセージを出す
     });
 
     // 戻るボタン
