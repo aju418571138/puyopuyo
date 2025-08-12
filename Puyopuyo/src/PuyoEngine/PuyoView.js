@@ -36,26 +36,28 @@ export default class PuyoView {
         const BOARD_OFFSET_Y = this.PuyoLogic.offsetY; // 盤面のY座標オフセット
 
         // --- 操作ぷよを描画 ---
-        // 軸ぷよの位置を更新
-        this.puyo1.x = BOARD_OFFSET_X + puyoData.x * TILE_SIZE;
-        this.puyo1.y = BOARD_OFFSET_Y + puyoData.y * TILE_SIZE;
-        this.puyo1.setFillStyle(puyoColors[puyoData.color1]);
+        if(puyoData){
+            // 軸ぷよの位置を更新
+            this.puyo1.x = BOARD_OFFSET_X + puyoData.x * TILE_SIZE;
+            this.puyo1.y = BOARD_OFFSET_Y + puyoData.y * TILE_SIZE;
+            this.puyo1.setFillStyle(puyoColors[puyoData.color1]);
 
-        // (回転部分のコードは省略... 前回のままでOK)
-        switch (puyoData.rotation) {
-            case 0: this.puyo2.x = this.puyo1.x; this.puyo2.y = this.puyo1.y - TILE_SIZE; break;
-            case 1: this.puyo2.x = this.puyo1.x + TILE_SIZE; this.puyo2.y = this.puyo1.y; break;
-            case 2: this.puyo2.x = this.puyo1.x; this.puyo2.y = this.puyo1.y + TILE_SIZE; break;
-            case 3: this.puyo2.x = this.puyo1.x - TILE_SIZE; this.puyo2.y = this.puyo1.y; break;
+            // (回転部分のコードは省略... 前回のままでOK)
+            switch (puyoData.rotation) {
+                case 0: this.puyo2.x = this.puyo1.x; this.puyo2.y = this.puyo1.y - TILE_SIZE; break;
+                case 1: this.puyo2.x = this.puyo1.x + TILE_SIZE; this.puyo2.y = this.puyo1.y; break;
+                case 2: this.puyo2.x = this.puyo1.x; this.puyo2.y = this.puyo1.y + TILE_SIZE; break;
+                case 3: this.puyo2.x = this.puyo1.x - TILE_SIZE; this.puyo2.y = this.puyo1.y; break;
+            }
+            this.puyo2.setFillStyle(puyoColors[puyoData.color2]);
+
+            // --- 操作ぷよの深度を設定 ---
+            // 操作ぷよの深度を設定して、他のオブジェクトより前面に表示する
+            this.puyo1.setDepth(10);
+            this.puyo2.setDepth(10);
+            console.log(`操作ぷよの位置: (${this.puyo1.x}, ${this.puyo1.y}), (${this.puyo2.x}, ${this.puyo2.y})操作ぷよの色: ${puyoColors[puyoData.color1]}, ${puyoColors[puyoData.color2]}`);
         }
-        this.puyo2.setFillStyle(puyoColors[puyoData.color2]);
-
-        // --- 操作ぷよの深度を設定 ---
-        // 操作ぷよの深度を設定して、他のオブジェクトより前面に表示する
-        this.puyo1.setDepth(10);
-        this.puyo2.setDepth(10);
-        console.log(`操作ぷよの位置: (${this.puyo1.x}, ${this.puyo1.y}), (${this.puyo2.x}, ${this.puyo2.y})操作ぷよの色: ${puyoColors[puyoData.color1]}, ${puyoColors[puyoData.color2]}`);
-        // --- 着地したぷよの描画 ---
+            // --- 着地したぷよの描画 ---
         // 1. まず古いぷよを全部消す
         this.boardPuyoGroup.clear(true, true);
         

@@ -15,7 +15,7 @@ export default class GameScene extends Phaser.Scene{
     }
     create(){
       this.puyoLogic = new PuyoLogic();// PuyoLogicのインスタンスを生成
-      this.puyoController = new PuyoController(this.input, this.puyoLogic);// PuyoControllerのインスタンスを生成
+      this.puyoController = new PuyoController(this, this.puyoLogic);// PuyoControllerのインスタンスを生成
       this.puyoView = new PuyoView(this, this.puyoLogic);// PuyoViewのインスタンスを生成
 
     }

@@ -24,7 +24,7 @@ export default class PuyoLogic {
       size = 40,
       offsetX = 100,
       offsetY = 50,
-      deadTiles = [{x:2, y:12}] //ここにぷよがたまったらゲームオーバー
+      deadTiles = [{x:2, y:2}] //ここにぷよがたまったらゲームオーバー
     }={}){
       this.width = width; // 盤面の列数
       this.height = height; // 盤面の行数
@@ -137,6 +137,9 @@ export default class PuyoLogic {
       this.board[childPos.y][childPos.x] = color2;
 
       this.currentPuyo = null; // 固定したら操作対象をなくす
+
+      // ここで重力を適用
+      this.applyGravity();
     }
 
     /**
@@ -164,8 +167,8 @@ export default class PuyoLogic {
      */
     spawnNewPuyo() {
       // 色は1から始まる整数とする（0は空マス）
-      const color1 = Math.floor(Math.random() * this.colors.length) + 1;
-      const color2 = Math.floor(Math.random() * this.colors.length) + 1;
+      const color1 = Math.floor(Math.random() * (this.colors.length-1)) + 1;
+      const color2 = Math.floor(Math.random() * (this.colors.length-1)) + 1;
 
       this.currentPuyo = {
         x: 2,        // 盤面の中央上部
