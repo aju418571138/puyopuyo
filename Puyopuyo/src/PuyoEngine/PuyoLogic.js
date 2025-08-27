@@ -161,9 +161,6 @@ export default class PuyoLogic {
       this.board[childPos.y][childPos.x] = color2;
 
       this.currentPuyo = null; // 固定したら操作対象をなくす
-
-      // ここで重力を適用
-      this.applyGravity();
     }
     
     /**

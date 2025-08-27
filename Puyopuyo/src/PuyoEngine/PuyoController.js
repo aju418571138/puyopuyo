@@ -134,12 +134,14 @@ export default class PuyoController {
      * ぷよが着地したときに呼ばれるコールバック関数
      * @returns {boolean} - ゲームオーバーならtrueを返す
      */
-    puyoLanded(){
+    async puyoLanded(){
         // 衝突したら、ぷよを着地させる
         this.PuyoLogic.landPuyo();
+        // 重力を適用してぷよを落とす
+        this.PuyoLogic.applyGravity();
 
         // 連鎖処理
-        this.handleChain();
+        await this.handleChain();
 
         // ゲームオーバー判定
         if (this.PuyoLogic.isGameOver()) {
@@ -168,8 +170,8 @@ export default class PuyoController {
                 this.PuyoLogic.applyGravity();
                 await this.sleep(300); // ぷよが落ちるアニメーションの時間を待つ
             } else {
-                // 何も消えなくなったらループを抜ける
-                break;
+                // 何も消えなくなったらリターン
+                return;
             }
         }
     }

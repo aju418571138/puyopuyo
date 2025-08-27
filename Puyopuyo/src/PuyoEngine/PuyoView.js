@@ -37,6 +37,9 @@ export default class PuyoView {
 
         // --- 操作ぷよを描画 ---
         if(puyoData){
+            // currentPuyoが存在する場合は表示
+            this.puyo1.visible = true;
+            this.puyo2.visible = true;
             // 軸ぷよの位置を更新
             this.puyo1.x = BOARD_OFFSET_X + puyoData.x * TILE_SIZE;
             this.puyo1.y = BOARD_OFFSET_Y + puyoData.y * TILE_SIZE;
@@ -55,6 +58,10 @@ export default class PuyoView {
             // 操作ぷよの深度を設定して、他のオブジェクトより前面に表示する
             this.puyo1.setDepth(10);
             this.puyo2.setDepth(10);
+        }else{
+            // currentPuyoがnullの場合は非表示
+            this.puyo1.visible = false;
+            this.puyo2.visible = false;        
         }
             // --- 着地したぷよの描画 ---
         // 1. まず古いぷよを全部消す
