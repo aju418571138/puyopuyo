@@ -9,6 +9,7 @@ export default class PuyoLogic {
    * @param {number} [options.offsetX=100] - 盤面のX座標オフセット (描画用)
    * @param {number} [options.offsetY=50] - 盤面のY座標オフセット (描画用)
    * @param {object[]} [options.deadTiles] - ゲームオーバーになるマス
+   * @param {object} callbackFunctions - PuyoControllerにコールバックする関数を格納するオブジェクト. コールバックする関数が増えたらここに追加する
    */
     constructor({
       // 盤面のサイズや、ぷよの色数、マスのサイズなどのデフォルト値を設定
@@ -24,7 +25,11 @@ export default class PuyoLogic {
       size = 40,
       offsetX = 100,
       offsetY = 50,
-      deadTiles = [{x:2, y:2}] //ここにぷよがたまったらゲームオーバー
+      deadTiles = [{x:2, y:2}], //ここにぷよがたまったらゲームオーバー
+      callbackFunctions = { // PuyoControllerにコールバックする関数を格納するオブジェクト
+        fallReset: ()=>{}, //デフォルト値は空の関数
+        puyoGenerated: ()=>{}
+      },
     }={}){
       this.width = width; // 盤面の列数
       this.height = height; // 盤面の行数
@@ -33,13 +38,12 @@ export default class PuyoLogic {
       this.offsetX = offsetX; // 盤面のX座標オフセット(盤面左端の座標)
       this.offsetY = offsetY; // 盤面のY座標オフセット
       this.deadTiles = deadTiles; // ゲームオーバーの条件となるぷよの位置
+      this.callbackFunctions = callbackFunctions; // PuyoControllerにコールバックする関数を格納するオブジェクト
       // --- 盤面の状態 ---
       // 盤面の上部に見えない行を2行追加して、ぷよの出現や回転を処理しやすくする
       this.board = Array(this.height+2).fill(null).map(() => Array(this.width).fill(0));
       // --- 操作中のぷよの状態 ---
       this.currentPuyo = null; // ゲーム開始時にspawnNewPuyoで初期化
-      
-      this.spawnNewPuyo(); // 最初のぷよを生成
     }
     // ========== ぷよの操作 ==========
     /**
@@ -73,6 +77,8 @@ export default class PuyoLogic {
       const newRotation = (rotation + 1) % 4;
       if (this.isPositionValid(x, y, newRotation)) {
         this.currentPuyo.rotation = newRotation;
+      }else{
+        this.wallKick({x,y,newRotation});
       }
     }
 
@@ -85,6 +91,36 @@ export default class PuyoLogic {
       const newRotation = (rotation - 1 + 4) % 4;
       if (this.isPositionValid(x, y, newRotation)) {
         this.currentPuyo.rotation = newRotation;
+      }else{
+        this.wallKick({x,y,newRotation});
+      }
+    }
+
+    /**
+     * 操作ぷよの回転時の壁キック処理
+     * @param {object} puyo - 回転後のぷよの状態
+     */
+    wallKick(puyo){
+      if(!puyo) return;
+      switch(puyo.newRotation){
+        case 1: //右
+          if(this.isPositionValid(puyo.x-1, puyo.y, puyo.newRotation)){
+            this.currentPuyo.x--;
+            this.currentPuyo.rotation = puyo.newRotation;
+          }
+          break;
+        case 3: //左
+          if(this.isPositionValid(puyo.x+1, puyo.y, puyo.newRotation)){
+            this.currentPuyo.x++;
+            this.currentPuyo.rotation = puyo.newRotation;
+          }
+          break;
+        case 2: //下
+          if(this.isPositionValid(puyo.x, puyo.y-1, puyo.newRotation)){
+            this.currentPuyo.y--;
+            this.currentPuyo.rotation = puyo.newRotation;
+          }
+          break;
       }
     }
 
@@ -166,6 +202,9 @@ export default class PuyoLogic {
      * 新しい操作ぷよを生成する
      */
     spawnNewPuyo() {
+      // コールバック関数を呼び出して、PuyoControllerにぷよ生成を通知
+      this.callbackFunctions.puyoGenerated();
+
       // 色は1から始まる整数とする（0は空マス）
       const color1 = Math.floor(Math.random() * (this.colors.length-1)) + 1;
       const color2 = Math.floor(Math.random() * (this.colors.length-1)) + 1;
