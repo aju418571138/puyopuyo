@@ -18,7 +18,8 @@ export default class PuyoController {
 
         this.callBackFunctionsObj = {
             puyoGenerated: () => this.puyoGenerated(),
-            fallReset: () => this.fallReset()
+            fallReset: () => this.fallReset(),
+            puyoLanded: () => this.puyoLanded(),
         }; // PuyoLogicがコールバックする関数を格納するオブジェクト
 
         this.scene = scene; // Phaserのシーンオブジェクト
@@ -127,6 +128,59 @@ export default class PuyoController {
             callbackScope: this.PuyoLogic, // コールバックのスコープをPuyoLogicに設定
             loop: true, // ずっと繰り返す
         });
+    }
+
+    /**
+     * ぷよが着地したときに呼ばれるコールバック関数
+     * @returns {boolean} - ゲームオーバーならtrueを返す
+     */
+    puyoLanded(){
+        // 衝突したら、ぷよを着地させる
+        this.PuyoLogic.landPuyo();
+
+        // 連鎖処理
+        this.handleChain();
+
+        // ゲームオーバー判定
+        if (this.PuyoLogic.isGameOver()) {
+          console.log("GAME OVER");
+          this.PuyoLogic.currentPuyo = null; // ゲームオーバー後は操作不能に
+          return true;
+        }
+
+        // 新しいぷよを生成
+        this.PuyoLogic.spawnNewPuyo();
+    }
+
+    /**
+     * 連鎖処理を行う
+     */
+    async handleChain() {
+        let chainCount = 0;
+        while (true) {
+            // 4つ以上繋がったぷよを消す
+            const cleared = this.PuyoLogic.checkAndClearPuyos();
+            if (cleared) {
+                chainCount++;
+                console.log(`${chainCount}連鎖！`);
+                // ぷよが消えたら、重力を適用してぷよを落とす
+                await this.sleep(300); // ぷよが消えるアニメーションの時間を待つ
+                this.PuyoLogic.applyGravity();
+                await this.sleep(300); // ぷよが落ちるアニメーションの時間を待つ
+            } else {
+                // 何も消えなくなったらループを抜ける
+                break;
+            }
+        }
+    }
+
+    /**
+    * 指定されたミリ秒だけ待機する非同期関数
+    * @param {number} ms - 待機するミリ秒数
+    * @returns {Promise} - 指定されたミリ秒後に解決するPromise
+    */
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 
 

@@ -28,7 +28,8 @@ export default class PuyoLogic {
       deadTiles = [{x:2, y:2}], //ここにぷよがたまったらゲームオーバー
       callbackFunctions = { // PuyoControllerにコールバックする関数を格納するオブジェクト
         fallReset: ()=>{}, //デフォルト値は空の関数
-        puyoGenerated: ()=>{}
+        puyoGenerated: ()=>{},
+        puyoLanded: ()=>{},
       },
     }={}){
       this.width = width; // 盤面の列数
@@ -139,21 +140,8 @@ export default class PuyoLogic {
         // 衝突しなければ1マス下に動かす
         this.currentPuyo.y++;
       } else {
-        // 衝突したら、ぷよを着地させる
-        this.landPuyo();
-
-        // 連鎖処理
-        this.handleChain();
-
-        // ゲームオーバー判定
-        if (this.isGameOver()) {
-          console.log("GAME OVER");
-          this.currentPuyo = null; // ゲームオーバー後は操作不能に
-          return true;
-        }
-
-        // 新しいぷよを生成
-        this.spawnNewPuyo();
+        // 衝突したら、ぷよを着地させるコールバックを呼び出す
+        return this.callbackFunctions.puyoLanded();
       }
       return false;
     }
@@ -177,34 +165,11 @@ export default class PuyoLogic {
       // ここで重力を適用
       this.applyGravity();
     }
-
-    /**
-     * 連鎖処理（ぷよの削除と落下を繰り返す）
-     */
-    handleChain() {
-      let chainCount = 0;
-      while (true) {
-        // 4つ以上繋がったぷよを消す
-        const cleared = this.checkAndClearPuyos();
-        if (cleared) {
-          chainCount++;
-          console.log(`${chainCount}連鎖！`);
-          // ぷよが消えたら、重力を適用してぷよを落とす
-          this.applyGravity();
-        } else {
-          // 何も消えなくなったらループを抜ける
-          break;
-        }
-      }
-    }
     
     /**
      * 新しい操作ぷよを生成する
      */
     spawnNewPuyo() {
-      // コールバック関数を呼び出して、PuyoControllerにぷよ生成を通知
-      this.callbackFunctions.puyoGenerated();
-
       // 色は1から始まる整数とする（0は空マス）
       const color1 = Math.floor(Math.random() * (this.colors.length-1)) + 1;
       const color2 = Math.floor(Math.random() * (this.colors.length-1)) + 1;
@@ -216,6 +181,8 @@ export default class PuyoLogic {
         color1: color1,
         color2: color2,
       };
+      // コールバック関数を呼び出して、PuyoControllerにぷよ生成を通知
+      this.callbackFunctions.puyoGenerated();
     }
     
     /**
