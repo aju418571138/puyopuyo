@@ -45,6 +45,7 @@ export default class PuyoLogic {
       this.board = Array(this.height+2).fill(null).map(() => Array(this.width).fill(0));
       // --- 操作中のぷよの状態 ---
       this.currentPuyo = null; // ゲーム開始時にspawnNewPuyoで初期化
+      this.virtualRotation = 0; //回転できないときに回転方向を記憶しておくための変数
     }
     // ========== ぷよの操作 ==========
     /**
@@ -75,12 +76,9 @@ export default class PuyoLogic {
     rotatePuyo() {
       if (!this.currentPuyo) return;
       const { x, y, rotation } = this.currentPuyo;
-      const newRotation = (rotation + 1) % 4;
-      if (this.isPositionValid(x, y, newRotation)) {
-        this.currentPuyo.rotation = newRotation;
-      }else{
-        this.wallKick({x,y,newRotation});
-      }
+      this.virtualRotation = (this.virtualRotation +1) % 4;
+      const newRotation = this.virtualRotation;
+      this.rotationSystem({x,y,newRotation});
     }
 
     /**
@@ -89,43 +87,28 @@ export default class PuyoLogic {
     rotatePuyoCounterClockwise() {
       if (!this.currentPuyo) return;
       const { x, y, rotation } = this.currentPuyo;
-      const newRotation = (rotation - 1 + 4) % 4;
-      if (this.isPositionValid(x, y, newRotation)) {
-        this.currentPuyo.rotation = newRotation;
-      }else{
-        this.wallKick({x,y,newRotation});
-      }
+      this.virtualRotation = (this.virtualRotation -1 + 4) % 4;
+      const newRotation = this.virtualRotation;
+      this.rotationSystem({x,y,newRotation});
     }
-
     /**
-     * 操作ぷよの回転時の壁キック処理
-     * @param {object} puyo - 回転後のぷよの状態
+     * 移動先候補を順番にチェックし、回転した時の移動を決定
      */
-    wallKick(puyo){
-      if(!puyo) return;
-      switch(puyo.newRotation){
-        case 1: //右
-          if(this.isPositionValid(puyo.x-1, puyo.y, puyo.newRotation)){
-            this.currentPuyo.x--;
-            this.currentPuyo.rotation = puyo.newRotation;
-          }
+    rotationSystem(puyo){
+      const checkDicts = {
+        0: {0:{x:0,y:0}},//上
+        1: {0:{x:0,y:0},1:{x:-1,y:0},2:{x:1,y:0}},//右
+        3: {0:{x:0,y:0},1:{x:-1,y:0},2:{x:1,y:0}},//左
+        2: {0:{x:0,y:0},1:{x:0,y:-0.5},2:{x:0,y:-1}},//下
+      }
+      const checks = checkDicts[puyo.newRotation];
+      for(const check in checks){
+        if(this.isPositionValid(puyo.x+checks[check].x, puyo.y+checks[check].y, puyo.newRotation)){
+          this.currentPuyo.x += checks[check].x;
+          this.currentPuyo.y += checks[check].y;
+          this.currentPuyo.rotation = puyo.newRotation;
           break;
-        case 3: //左
-          if(this.isPositionValid(puyo.x+1, puyo.y, puyo.newRotation)){
-            this.currentPuyo.x++;
-            this.currentPuyo.rotation = puyo.newRotation;
-          }
-          break;
-        case 2: //下
-          if(this.isPositionValid(puyo.x, puyo.y-1, puyo.newRotation)){
-            if(Number.isInteger(this.currentPuyo.y)){
-              this.currentPuyo.y--;
-            }else{
-              this.currentPuyo.y -= 0.5;
-            }
-            this.currentPuyo.rotation = puyo.newRotation;
-          }
-          break;
+        }
       }
     }
 
@@ -182,6 +165,7 @@ export default class PuyoLogic {
         color1: color1,
         color2: color2,
       };
+      this.virtualRotation = this.currentPuyo.rotation; //回転できないときに回転方向を記憶しておくための変数を初期化
       // コールバック関数を呼び出して、PuyoControllerにぷよ生成を通知
       this.callbackFunctions.puyoGenerated();
     }
@@ -298,7 +282,7 @@ export default class PuyoLogic {
     /**
      * 指定した位置・回転でぷよが存在できるかチェックする
      * @param {number} x - 軸ぷよのX座標
-     * @param {number} y - 軸ぷよのY座標
+     * @param {number} y - 軸ぷよのY座標の切り上げ
      * @param {number} rotation - ぷよの回転状態
      * @returns {boolean} - 配置可能ならtrue
      */
