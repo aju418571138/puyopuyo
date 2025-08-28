@@ -118,7 +118,11 @@ export default class PuyoLogic {
           break;
         case 2: //下
           if(this.isPositionValid(puyo.x, puyo.y-1, puyo.newRotation)){
-            this.currentPuyo.y--;
+            if(Number.isInteger(this.currentPuyo.y)){
+              this.currentPuyo.y--;
+            }else{
+              this.currentPuyo.y -= 0.5;
+            }
             this.currentPuyo.rotation = puyo.newRotation;
           }
           break;
@@ -136,9 +140,9 @@ export default class PuyoLogic {
       const { x, y, rotation } = this.currentPuyo;
 
       // 1マス下に移動可能かチェック
-      if (this.isPositionValid(x, y + 1, rotation)) {
+      if (this.isPositionValid(x, y + 0.5, rotation)) {
         // 衝突しなければ1マス下に動かす
-        this.currentPuyo.y++;
+        this.currentPuyo.y+=0.5;
       } else {
         // 衝突したら、ぷよを着地させるコールバックを呼び出す
         return this.callbackFunctions.puyoLanded();
@@ -299,12 +303,12 @@ export default class PuyoLogic {
      * @returns {boolean} - 配置可能ならtrue
      */
     isPositionValid(x, y, rotation) {
-
+      const judgeY = Math.ceil(y);//半マス落下に対応するため、y座標を切り上げ
       // 軸ぷよの位置をチェック
-      if (this.checkCollision(x, y)) return false;
+      if (this.checkCollision(x, judgeY)) return false;
 
       // 子ぷよの位置をチェック
-      const childPos = this.getChildPuyoPosition(x, y, rotation);
+      const childPos = this.getChildPuyoPosition(x, judgeY, rotation);
       if (this.checkCollision(childPos.x, childPos.y)) return false;
       
       return true; // どこにも衝突しなければOK

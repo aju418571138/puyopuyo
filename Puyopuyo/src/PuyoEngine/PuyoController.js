@@ -30,8 +30,8 @@ export default class PuyoController {
         this.keys = this.scene.input.keyboard.addKeys('X,Z');
 
         // --- インターバル設定 ---
-        this.fallInterval = 1000; // ミリ秒単位で落下間隔を設定
-        this.fallIntervalFast = 40; // ミリ秒単位で高速落下間隔を設定
+        this.fallInterval = 500; // ミリ秒単位で落下間隔を設定
+        this.fallIntervalFast = 30; // ミリ秒単位で高速落下間隔を設定
         this.fallIntervalNow = this.fallInterval; //現在の落下間隔
         this.moveInterval = 40; // ミリ秒単位で左右移動の連続入力間隔を設定
         
