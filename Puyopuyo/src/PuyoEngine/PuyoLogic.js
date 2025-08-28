@@ -9,7 +9,7 @@ export default class PuyoLogic {
    * @param {number} [options.offsetX=100] - 盤面のX座標オフセット (描画用)
    * @param {number} [options.offsetY=50] - 盤面のY座標オフセット (描画用)
    * @param {object[]} [options.deadTiles] - ゲームオーバーになるマス
-   * @param {object} callbackFunctions - PuyoControllerにコールバックする関数を格納するオブジェクト. コールバックする関数が増えたらここに追加する
+   * @param {object} callbackObj - PuyoControllerにコールバックするオブジェクトを格納するオブジェクト. コールバックするオブジェクトが増えたらここに追加する
    */
     constructor({
       // 盤面のサイズや、ぷよの色数、マスのサイズなどのデフォルト値を設定
@@ -26,7 +26,7 @@ export default class PuyoLogic {
       offsetX = 100,
       offsetY = 50,
       deadTiles = [{x:2, y:2}], //ここにぷよがたまったらゲームオーバー
-      callbackFunctions = { // PuyoControllerにコールバックする関数を格納するオブジェクト
+      callbackObj = { // PuyoControllerにオブジェクトする関数を格納するオブジェクト
         fallReset: ()=>{}, //デフォルト値は空の関数
         puyoGenerated: ()=>{},
         puyoLanded: ()=>{},
@@ -39,7 +39,7 @@ export default class PuyoLogic {
       this.offsetX = offsetX; // 盤面のX座標オフセット(盤面左端の座標)
       this.offsetY = offsetY; // 盤面のY座標オフセット
       this.deadTiles = deadTiles; // ゲームオーバーの条件となるぷよの位置
-      this.callbackFunctions = callbackFunctions; // PuyoControllerにコールバックする関数を格納するオブジェクト
+      this.callbackObj = callbackObj; // PuyoControllerにコールバックするオブジェクトを格納するオブジェクト
       // --- 盤面の状態 ---
       // 盤面の上部に見えない行を2行追加して、ぷよの出現や回転を処理しやすくする
       this.board = Array(this.height+2).fill(null).map(() => Array(this.width).fill(0));
@@ -50,23 +50,31 @@ export default class PuyoLogic {
     // ========== ぷよの操作 ==========
     /**
      * 操作ぷよを左に1マス移動する
+     * @return {boolean} - 移動に成功したらtrue、失敗したらfalseを返す
      */
     movePuyoLeft() {
-      if (!this.currentPuyo) return;
+      if (!this.currentPuyo) return false;
       const { x, y, rotation } = this.currentPuyo;
       if (this.isPositionValid(x - 1, y, rotation)) {
         this.currentPuyo.x--;
+        return true;
+      }else{
+        return false;
       }
     }
 
     /**
      * 操作ぷよを右に1マス移動する
+     * @return {boolean} - 移動に成功したらtrue、失敗したらfalseを返す
      */
     movePuyoRight() {
-      if (!this.currentPuyo) return;
+      if (!this.currentPuyo) return false;
       const { x, y, rotation } = this.currentPuyo;
       if (this.isPositionValid(x + 1, y, rotation)) {
         this.currentPuyo.x++;
+        return true;
+      }else{
+        return false;
       }
     }
 
@@ -128,7 +136,7 @@ export default class PuyoLogic {
         this.currentPuyo.y+=0.5;
       } else {
         // 衝突したら、ぷよを着地させるコールバックを呼び出す
-        return this.callbackFunctions.puyoLanded();
+        return this.callbackObj.puyoLanded();
       }
       return false;
     }
@@ -167,7 +175,7 @@ export default class PuyoLogic {
       };
       this.virtualRotation = this.currentPuyo.rotation; //回転できないときに回転方向を記憶しておくための変数を初期化
       // コールバック関数を呼び出して、PuyoControllerにぷよ生成を通知
-      this.callbackFunctions.puyoGenerated();
+      this.callbackObj.puyoGenerated();
     }
     
     /**
