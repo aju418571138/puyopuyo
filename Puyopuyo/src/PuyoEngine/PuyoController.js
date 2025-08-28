@@ -178,6 +178,8 @@ export default class PuyoController {
         }
         // 衝突したら、ぷよを着地させる
         this.PuyoLogic.landPuyo();
+
+        await this.sleep(300); // 着地アニメーションの時間を待つ
         // 重力を適用してぷよを落とす
         this.PuyoLogic.applyGravity();
 
