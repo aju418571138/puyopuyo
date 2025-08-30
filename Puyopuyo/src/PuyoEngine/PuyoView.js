@@ -18,13 +18,14 @@ export default class PuyoView {
             });
         });
         // --- 操作ぷよを描画 ---
-        const puyoData = this.PuyoLogic.currentPuyo;
+        //const puyoData = this.PuyoLogic.currentPuyo;
 
         // ぷよの絵を作成し、this.puyo1, this.puyo2 に保存する
-        this.puyo1 = this.scene.add.circle(0, 0, this.PuyoLogic.size / 2, this.PuyoLogic.colors[puyoData.color1]);
-        this.puyo2 = this.scene.add.circle(0, 0, this.PuyoLogic.size / 2, this.PuyoLogic.colors[puyoData.color2]);
+        this.puyo1 = this.scene.add.circle(0, 0, this.PuyoLogic.size / 2, this.PuyoLogic.colors[0]); // 初期色は透明
+        this.puyo2 = this.scene.add.circle(0, 0, this.PuyoLogic.size / 2, this.PuyoLogic.colors[0]);
         
         this.boardPuyoGroup = this.scene.add.group();
+        this.nextPuyoGroup = this.scene.add.group();
     }
     update(){
 
@@ -80,6 +81,17 @@ export default class PuyoView {
             }
             });
         });
+
+        // --- ネクストの描画 ---
+        // 1. まず古いぷよを全部消す
+        this.nextPuyoGroup.clear(true, true);
+        const nextTsumos = this.PuyoLogic.nextTsumos;
+        const nextPos = this.PuyoLogic.nextPos;
+        for(const nextPosObj of nextPos){
+            const index = nextPos.indexOf(nextPosObj); //nextPosObjのインデックス
+            this.nextPuyoGroup.add(this.scene.add.circle(nextPosObj.x * TILE_SIZE + BOARD_OFFSET_X, nextPosObj.y * TILE_SIZE + BOARD_OFFSET_Y, (TILE_SIZE * nextPosObj.size) / 2, puyoColors[nextTsumos[index].color2]));
+            this.nextPuyoGroup.add(this.scene.add.circle(nextPosObj.x * TILE_SIZE + BOARD_OFFSET_X, nextPosObj.y * TILE_SIZE + BOARD_OFFSET_Y + TILE_SIZE*nextPosObj.size, (TILE_SIZE * nextPosObj.size) / 2, puyoColors[nextTsumos[index].color1]));
+        }
 
     }
 }

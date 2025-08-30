@@ -34,6 +34,12 @@ export default class PuyoController {
         this.fallIntervalFast = 30; // ミリ秒単位で高速落下間隔を設定
         this.fallIntervalNow = this.fallInterval; //現在の落下間隔
         this.moveInterval = 30; // ミリ秒単位で左右移動の連続入力間隔を設定
+
+        // --- ネクストツモを生成 ---
+        this.PuyoLogic.nextTsumos.unshift(...this.PuyoLogic.generateFirstTsumo()); //最初のネクストを生成
+        for(let i=2; i<this.PuyoLogic.nexts; i++){
+            this.PuyoLogic.nextTsumos.unshift(this.PuyoLogic.generateNextTsumo()); //ネクストを生成
+        }
         
         this.PuyoLogic.spawnNewPuyo(); // 最初のぷよを生成
         this.puyoView = new PuyoView(scene, this.PuyoLogic); // PuyoViewのインスタンス

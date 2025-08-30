@@ -2,19 +2,22 @@
 export default class PuyoLogic {
   /**
    * @param {object} options - 盤面の設定オプション
-   * @param {number} [options.width=6] - 盤面の列数
-   * @param {number} [options.height=12] - 盤面の行数（ぷよが表示されるエリア）
+   * @param {string} [options.width=6] - 盤面の列数
+   * @param {string} [options.height=12] - 盤面の行数（ぷよが表示されるエリア）
    * @param {string[]} [options.colors] - ぷよの色の配列
-   * @param {number} [options.size=40] - 1マスのサイズ (描画用)
-   * @param {number} [options.offsetX=100] - 盤面のX座標オフセット (描画用)
-   * @param {number} [options.offsetY=50] - 盤面のY座標オフセット (描画用)
+   * @param {string} [options.size=40] - 1マスのサイズ (描画用)
+   * @param {string} [options.offsetX=100] - 盤面のX座標オフセット (描画用)
+   * @param {string} [options.offsetY=50] - 盤面のY座標オフセット (描画用)
    * @param {object[]} [options.deadTiles] - ゲームオーバーになるマス
    * @param {object} callbackObj - PuyoControllerにコールバックするオブジェクトを格納するオブジェクト. コールバックするオブジェクトが増えたらここに追加する
-   */
+   * @param {Number} [options.nexts=2] - ネクストの数
+   * @param {object[]} [options.nextPos] - ネクストの表示位置とサイズの配列. {x: X座標, y: Y座標, size: サイズ}のオブジェクトを要素に持つ配列
+  */
     constructor({
       // 盤面のサイズや、ぷよの色数、マスのサイズなどのデフォルト値を設定
       width = 6,
       height = 12,
+      nextPos = [{x:8,y:4,size:1},{x:8,y:1,size:1}], //ネクストの表示位置 最後の要素が次の手
       colors = [
         0x000000, // 空マス
         0xFF0000, // 赤
@@ -31,7 +34,17 @@ export default class PuyoLogic {
         puyoGenerated: ()=>{},
         puyoLanded: ()=>{},
       },
+      nexts = 2, //ネクストの数
     }={}){
+      /**
+       * @type {Array<{color1: string, color2: string}>}
+       */
+      this.nextTsumos = []; //ネクストのぷよを格納する配列
+      /**
+       * ネクストの数
+       */
+      this.nexts = nexts; //ネクストの数
+      this.nextPos = nextPos; //ネクストの表示位置
       this.width = width; // 盤面の列数
       this.height = height; // 盤面の行数
       this.colors = colors; // ぷよの色の配列
@@ -46,6 +59,7 @@ export default class PuyoLogic {
       // --- 操作中のぷよの状態 ---
       this.currentPuyo = null; // ゲーム開始時にspawnNewPuyoで初期化
       this.virtualRotation = 0; //回転できないときに回転方向を記憶しておくための変数
+      this.tsumoManageList = []; //ツモのリストを管理する配列
     }
     // ========== ぷよの操作 ==========
     /**
@@ -104,10 +118,10 @@ export default class PuyoLogic {
      */
     rotationSystem(puyo){
       const checkDicts = {
-        0: {0:{x:0,y:0}},//上
-        1: {0:{x:0,y:0},1:{x:-1,y:0},2:{x:1,y:0}},//右
-        3: {0:{x:0,y:0},1:{x:-1,y:0},2:{x:1,y:0}},//左
-        2: {0:{x:0,y:0},1:{x:0,y:-0.5},2:{x:0,y:-1}},//下
+        0: {0:{x:0,y:0}},//上向きの時
+        1: {0:{x:0,y:0},1:{x:-1,y:0},2:{x:1,y:0}},//右向きの時
+        3: {0:{x:0,y:0},1:{x:-1,y:0},2:{x:1,y:0}},//左向きの時
+        2: {0:{x:0,y:0},1:{x:0,y:-0.5},2:{x:0,y:-1}},//下向きの時
       }
       const checks = checkDicts[puyo.newRotation];
       for(const check in checks){
@@ -163,8 +177,11 @@ export default class PuyoLogic {
      */
     spawnNewPuyo() {
       // 色は1から始まる整数とする（0は空マス）
-      const color1 = Math.floor(Math.random() * (this.colors.length-1)) + 1;
-      const color2 = Math.floor(Math.random() * (this.colors.length-1)) + 1;
+      const colorObj = this.nextTsumos.pop();
+      const color1 = colorObj.color1;
+      const color2 = colorObj.color2;
+      this.nextTsumos.unshift(this.generateNextTsumo()); //新たにネクストを生成して追加
+      console.log(this.nextTsumos);
 
       this.currentPuyo = {
         x: 2,        // 盤面の中央上部
@@ -191,9 +208,9 @@ export default class PuyoLogic {
     
     /**
      * 指定した座標のぷよと繋がっている同色のぷよのグループを探す
-     * @param {number} startX - 探索を開始するX座標
-     * @param {number} startY - 探索を開始するY座標
-     * @returns {Array<{x: number, y: number}>} - 繋がっているぷよの座標リスト
+     * @param {string} startX - 探索を開始するX座標
+     * @param {string} startY - 探索を開始するY座標
+     * @returns {Array<{x: string, y: string}>} - 繋がっているぷよの座標リスト
      */
     findConnectedPuyos(startX, startY) {
 
@@ -289,9 +306,9 @@ export default class PuyoLogic {
     
     /**
      * 指定した位置・回転でぷよが存在できるかチェックする
-     * @param {number} x - 軸ぷよのX座標
-     * @param {number} y - 軸ぷよのY座標の切り上げ
-     * @param {number} rotation - ぷよの回転状態
+     * @param {string} x - 軸ぷよのX座標
+     * @param {string} y - 軸ぷよのY座標の切り上げ
+     * @param {string} rotation - ぷよの回転状態
      * @returns {boolean} - 配置可能ならtrue
      */
     isPositionValid(x, y, rotation) {
@@ -308,8 +325,8 @@ export default class PuyoLogic {
     
     /**
      * 1つのぷよが指定した座標に存在できるかチェック（衝突判定）
-     * @param {number} puyoX - ぷよのX座標
-     * @param {number} puyoY - ぷよのY座標
+     * @param {string} puyoX - ぷよのX座標
+     * @param {string} puyoY - ぷよのY座標
      * @returns {boolean} - 存在できない(衝突する)ならtrue
      */
     checkCollision(puyoX, puyoY) {
@@ -330,10 +347,10 @@ export default class PuyoLogic {
     
     /**
      * 子ぷよの相対位置を取得する
-     * @param {number} x - 軸ぷよのX座標
-     * @param {number} y - 軸ぷよのY座標
-     * @param {number} rotation - 回転状態
-     * @returns {{x: number, y: number}} - 子ぷよの絶対座標
+     * @param {Number} x - 軸ぷよのX座標
+     * @param {Number} y - 軸ぷよのY座標
+     * @param {Number} rotation - 回転状態
+     * @returns {{x: Number, y: Number}} - 子ぷよの絶対座標
      */
     getChildPuyoPosition(x, y, rotation) {
       switch (rotation) {
@@ -343,5 +360,56 @@ export default class PuyoLogic {
           case 3: return { x: x - 1, y: y }; // 左
           default: return { x, y };
       }
+    }
+    /**
+     * 次の手を生成する関数
+     * @return {{color1: Number, color2: Number}} - 次の手の色情報のオブジェクトの配列
+     */
+    generateNextTsumo(){
+      const colors =  Array.from({length: this.colors.length - 1}, (_, i) => i + 1); //0は空マスなので除外[1,2,3,4,...,this.colors.length-1]
+      if(this.tsumoManageList.length === 0){ //ツモの管理リストが空なら新たに生成
+        this.tsumoManageList = createPileOfColors().slice(0); //配列のコピーを作成
+        this.makeListRandom(this.tsumoManageList); //配列の順番をランダムにする
+        return {color1: this.tsumoManageList.pop(), color2: this.tsumoManageList.pop()};
+      }else{
+        this.makeListRandom(this.tsumoManageList); //配列の順番をランダムにする
+        console.log(this.tsumoManageList);
+        return {color1: this.tsumoManageList.pop(), color2: this.tsumoManageList.pop()};
+      }
+      function createPileOfColors(){ //一巡用(4色なら128手,256色分)のツモの色の配列を生成
+        let pileOfColors = [];
+        for(const color of colors){
+          for(let i=0; i<64; i++){ //64個ずつ
+            pileOfColors.push(color);
+          }
+        }
+        return pileOfColors;
+      }
+    }
+    /**
+     * 
+     * @returns {Array<{color1: Number, color2: Number}>} - 最初の二手の色情報のオブジェクトの配列
+     */
+    generateFirstTsumo(){
+      const tsumoList = [];
+      const colors = Array.from({length: this.colors.length - 1}, (_, i) => i + 1); //0は空マスなので除外[1,2,3,4,...]
+      this.makeListRandom(colors);
+      const threeColors = colors.slice(0,3); //最初の二手は3色から選ぶ
+      for(let i=0; i<2; i++){ //二手分生成
+        const randomThreeColors = [];
+        this.makeListRandom(threeColors);
+        randomThreeColors[0] = threeColors[0];
+        this.makeListRandom(threeColors);
+        randomThreeColors[1] = threeColors[0];
+        tsumoList.push({color1: randomThreeColors[0], color2: randomThreeColors[1]});
+      }
+      return tsumoList;
+    }
+    /**
+     * 与えられた配列の順番をランダムにする
+     * @param {Array} list 
+     */
+    makeListRandom(list){
+      list.sort(() => Math.random() - 0.5);
     }
 }
