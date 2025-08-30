@@ -101,6 +101,7 @@ export default class PuyoLogic {
       this.virtualRotation = (this.virtualRotation +1) % 4;
       const newRotation = this.virtualRotation;
       this.rotationSystem({x,y,newRotation});
+
     }
 
     /**
@@ -113,6 +114,8 @@ export default class PuyoLogic {
       const newRotation = this.virtualRotation;
       this.rotationSystem({x,y,newRotation});
     }
+
+
     /**
      * 移動先候補を順番にチェックし、回転した時の移動を決定
      */
@@ -150,7 +153,8 @@ export default class PuyoLogic {
         this.currentPuyo.y+=0.5;
       } else {
         // 衝突したら、ぷよを着地させるコールバックを呼び出す
-        return this.callbackObj.puyoLanded();
+        //return this.callbackObj.puyoLanded();
+        return;
       }
       return false;
     }
@@ -306,9 +310,9 @@ export default class PuyoLogic {
     
     /**
      * 指定した位置・回転でぷよが存在できるかチェックする
-     * @param {string} x - 軸ぷよのX座標
-     * @param {string} y - 軸ぷよのY座標の切り上げ
-     * @param {string} rotation - ぷよの回転状態
+     * @param {Number} x - 軸ぷよのX座標
+     * @param {Number} y - 軸ぷよのY座標の切り上げ
+     * @param {Number} rotation - ぷよの回転状態
      * @returns {boolean} - 配置可能ならtrue
      */
     isPositionValid(x, y, rotation) {

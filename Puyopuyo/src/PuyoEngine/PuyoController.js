@@ -15,7 +15,8 @@ export default class PuyoController {
         if(!scene){
             throw new Error("PuyoControllerのコンストラクタにPhaserのシーンオブジェクトを渡してください");
         }
-
+        this.landCount = 0; // ぷよが着地してからのフレーム数をカウントする変数
+        this.landed = false; // ぷよが着地したかどうかのフラグ
         this.callBackObj = {
             puyoGenerated: () => this.puyoGenerated(),
             fallReset: () => this.fallReset(),
@@ -30,11 +31,11 @@ export default class PuyoController {
         this.keys = this.scene.input.keyboard.addKeys('X,Z');
 
         // --- インターバル設定 ---
-        this.fallInterval = 280; // ミリ秒単位で落下間隔を設定
+        this.landFrames = 30; // ぷよが着地してから何フレームで着地確定にするか
+        this.fallInterval = 333; // ミリ秒単位で落下間隔を設定
         this.fallIntervalFast = 30; // ミリ秒単位で高速落下間隔を設定
         this.fallIntervalNow = this.fallInterval; //現在の落下間隔
         this.moveInterval = 30; // ミリ秒単位で左右移動の連続入力間隔を設定
-
         // --- ネクストツモを生成 ---
         this.PuyoLogic.nextTsumos.unshift(...this.PuyoLogic.generateFirstTsumo()); //最初のネクストを生成
         for(let i=2; i<this.PuyoLogic.nexts; i++){
@@ -48,7 +49,8 @@ export default class PuyoController {
     
     puyoGenerated(){
         console.log("PuyoController: ぷよが生成されました");
-
+        this.falled = false; // 新しいぷよが生成されたので落下フラグをリセット
+        this.landCount = 0; // 着地カウントをリセット
         this.PuyoLogic.fallOneStep(); // ぷよが生成された瞬間一回落下させる
         this.fallReset(); // ぷよが生成されたら落下タイマーをリセット
         if(this.isFastButtonPressed){
@@ -123,6 +125,30 @@ export default class PuyoController {
             this.fallSlow();
             this.isFastButtonPressed=false;
         }
+
+        // --- 着地の判定 ---
+        this.landed = false; // フレームごとにリセット
+        if(this.PuyoLogic.currentPuyo){ // currentPuyoが存在する場合のみ判定
+            const {x,y,rotation} = this.PuyoLogic.currentPuyo;
+            if(this.PuyoLogic.isPositionValid(x, y+0.5, rotation)===false){ // 1マス下に移動できないなら
+                this.landed = true; // ぷよが着地したことを記録
+            }
+        }
+        if(this.landed){
+            this.landCount++;
+        }else{
+            if(this.landCount>0) {
+                this.fallReset(); // 着地していたのが解除されたら落下タイマーをリセット
+                console.log("PuyoController: 着地が解除されました");
+            }
+            this.landCount=0;
+        }
+        if(this.landCount>=this.landFrames){ //
+            this.puyoLanded();
+            this.landCount=0; // カウントをリセット
+        }
+
+        console.log(this.landCount);
     }
 
     /**
@@ -163,6 +189,7 @@ export default class PuyoController {
      * 落下のタイミングをリセット
      */
     fallReset(){
+        console.log("PuyoController: 落下タイマーをリセットしました");
         if(this.fallTimer){
             this.fallTimer.remove();
         }
@@ -179,9 +206,6 @@ export default class PuyoController {
      * @returns {boolean} - ゲームオーバーならtrueを返す
      */
     async puyoLanded(){
-        if(!(await this.isLandedEnough())){
-            return false; // まだ着地していないなら何もしない
-        }
         // 衝突したら、ぷよを着地させる
         this.PuyoLogic.landPuyo();
 
@@ -200,21 +224,6 @@ export default class PuyoController {
 
         // 新しいぷよを生成
         this.PuyoLogic.spawnNewPuyo();
-    }
-    /**
-     * 着地後、一定時間後にもう一度着地判定を行う
-     * @returns {boolean} - ぷよが一定時間後も着地しているならtrueを返す
-     */
-    async isLandedEnough(){
-      await this.sleep(this.fallInterval); // 落下間隔分待つ
-      if(!this.PuyoLogic.currentPuyo) return false; // currentPuyoがnullならfalseを返す(二重で呼ばれた場合の対策)
-        // この時点でのぷよの状態を確認して、本当に着地しているかを判定
-        return !this.PuyoLogic.isPositionValid(
-            this.PuyoLogic.currentPuyo.x,
-            this.PuyoLogic.currentPuyo.y+0.5,
-            this.PuyoLogic.currentPuyo.rotation
-        );
-
     }
 
     /**
