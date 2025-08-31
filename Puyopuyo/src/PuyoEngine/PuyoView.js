@@ -17,10 +17,9 @@ export default class PuyoView {
         maskGraphics.fillStyle(0x000000);
         maskGraphics.fillRect(
             this.PuyoLogic.offsetX-this.PuyoLogic.size/2, 
-            0,
-            //this.PuyoLogic.offsetY + (2 * this.PuyoLogic.size)-this.PuyoLogic.size/2, // 3行目から表示
+            this.PuyoLogic.offsetY + (2 * this.PuyoLogic.size)-this.PuyoLogic.size/2, // 3行目から表示
             this.PuyoLogic.width * this.PuyoLogic.size,
-            this.PuyoLogic.height * this.PuyoLogic.size+1000
+            this.PuyoLogic.height * this.PuyoLogic.size
         );
 
         // マスクを作成
