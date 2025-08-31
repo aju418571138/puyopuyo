@@ -254,7 +254,7 @@ export default class PuyoLogic {
           const ny = neighbor.y;
           const key = `${nx},${ny}`;
 
-          if (nx < 0 || nx >= this.width || ny < 0 || ny >= this.height + 2 || visited.has(key) || this.board[ny][nx] !== targetColor) {
+          if (nx < 0 || nx >= this.width || ny < 2 || ny >= this.height + 2 || visited.has(key) || this.board[ny][nx] !== targetColor) {
             continue;
           }
           visited.add(key);
@@ -272,7 +272,7 @@ export default class PuyoLogic {
         const puyosToClear = new Set();
         const checked = new Set();
 
-        for (let y = 0; y < this.height + 2; y++) {
+        for (let y = 2; y < this.height + 2; y++) {
             for (let x = 0; x < this.width; x++) {
                 const key = `${x},${y}`;
                 if (this.board[y][x] !== 0 && !checked.has(key)) {
