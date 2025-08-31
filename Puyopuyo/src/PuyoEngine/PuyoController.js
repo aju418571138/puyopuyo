@@ -31,7 +31,7 @@ export default class PuyoController {
         this.keys = this.scene.input.keyboard.addKeys('X,Z');
 
         // --- インターバル設定 ---
-        this.landFrames = 30; // ぷよが着地してから何フレームで着地確定にするか
+        this.landFrames = 20; // ぷよが着地してから何フレームで着地確定にするか
         this.fallInterval = 333; // ミリ秒単位で落下間隔を設定
         this.fallIntervalFast = 30; // ミリ秒単位で高速落下間隔を設定
         this.fallIntervalNow = this.fallInterval; //現在の落下間隔
