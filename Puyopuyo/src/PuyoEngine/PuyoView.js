@@ -3,6 +3,30 @@ export default class PuyoView {
     constructor(scene, PuyoLogic) {
         this.scene = scene; // Phaserのシーン
         this.PuyoLogic = PuyoLogic; // PuyoLogicのインスタンス
+
+        // コンテナを作成（すべての描画オブジェクトの親要素）
+        /**
+         * @type {Phaser.GameObjects.Container}
+         * 盤面全体をまとめるコンテナ
+         */
+        this.boardContainer = this.scene.add.container(0, 0); //0,0はコンテナの位置
+
+        // マスクの設定
+        const maskGraphics = this.scene.make.graphics();
+        // 表示したい領域を指定（1,2行目を除いた部分）
+        maskGraphics.fillStyle(0x000000);
+        maskGraphics.fillRect(
+            this.PuyoLogic.offsetX-this.PuyoLogic.size/2, 
+            0,
+            //this.PuyoLogic.offsetY + (2 * this.PuyoLogic.size)-this.PuyoLogic.size/2, // 3行目から表示
+            this.PuyoLogic.width * this.PuyoLogic.size,
+            this.PuyoLogic.height * this.PuyoLogic.size+1000
+        );
+
+        // マスクを作成
+        const mask = maskGraphics.createGeometryMask();
+        this.boardContainer.setMask(mask);
+
         // 盤面データ（二次元配列）を元に、マス目を描画する
         this.PuyoLogic.board.forEach((row, y) => {
             row.forEach((cell, x) => {
@@ -10,11 +34,10 @@ export default class PuyoView {
                 const tileX = this.PuyoLogic.offsetX + x * this.PuyoLogic.size;
                 const tileY = this.PuyoLogic.offsetY + y * this.PuyoLogic.size;
 
-                // 四角形を描画してマス目を作る
-                this.scene.add.rectangle(tileX, tileY, this.PuyoLogic.size, this.PuyoLogic.size, 0x000000, 0.2);
-                // 枠線も描画
-                this.scene.add.rectangle(tileX, tileY, this.PuyoLogic.size, this.PuyoLogic.size).setStrokeStyle(1, 0xffffff, 0.5);
-
+                // マス目と枠線を描画してコンテナに追加
+                const rect = this.scene.add.rectangle(tileX, tileY, this.PuyoLogic.size, this.PuyoLogic.size, 0x000000, 0.2);
+                const border = this.scene.add.rectangle(tileX, tileY, this.PuyoLogic.size, this.PuyoLogic.size).setStrokeStyle(1, 0xffffff, 0.5);
+                this.boardContainer.add([rect, border]);
             });
         });
         // --- 操作ぷよを描画 ---
@@ -23,9 +46,15 @@ export default class PuyoView {
         // ぷよの絵を作成し、this.puyo1, this.puyo2 に保存する
         this.puyo1 = this.scene.add.circle(0, 0, this.PuyoLogic.size / 2, this.PuyoLogic.colors[0]); // 初期色は透明
         this.puyo2 = this.scene.add.circle(0, 0, this.PuyoLogic.size / 2, this.PuyoLogic.colors[0]);
-        
+        // コンテナに追加
+        this.boardContainer.add([this.puyo1, this.puyo2]);
+
         this.boardPuyoGroup = this.scene.add.group();
+        // コンテナに追加
+        this.boardContainer.add(this.boardPuyoGroup.getChildren());
+
         this.nextPuyoGroup = this.scene.add.group();
+         //ネクストはコンテナに追加しない 盤面の外のため
     }
     update(){
 
@@ -77,7 +106,10 @@ export default class PuyoView {
                 const puyoY = BOARD_OFFSET_Y + y * TILE_SIZE;
                 const puyoColor = puyoColors[cell];
                 // グループに新しいぷよ（円）を追加する
-                this.boardPuyoGroup.add(this.scene.add.circle(puyoX, puyoY, TILE_SIZE / 2, puyoColor));
+                const puyo = this.scene.add.circle(puyoX, puyoY, TILE_SIZE / 2, puyoColor);
+                this.boardPuyoGroup.add(puyo);
+                // コンテナに追加
+                this.boardContainer.add(puyo);
             }
             });
         });

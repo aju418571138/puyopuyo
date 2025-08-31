@@ -148,7 +148,6 @@ export default class PuyoController {
             this.landCount=0; // カウントをリセット
         }
 
-        console.log(this.landCount);
     }
 
     /**

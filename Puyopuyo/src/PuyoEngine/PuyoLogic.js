@@ -100,7 +100,9 @@ export default class PuyoLogic {
       const { x, y, rotation } = this.currentPuyo;
       this.virtualRotation = (this.virtualRotation +1) % 4;
       const newRotation = this.virtualRotation;
-      this.rotationSystem({x,y,newRotation});
+      if(this.rotationSystem({x,y,newRotation})){
+        this.virtualRotation =(this.virtualRotation -1) % 4;
+      }
 
     }
 
@@ -112,12 +114,15 @@ export default class PuyoLogic {
       const { x, y, rotation } = this.currentPuyo;
       this.virtualRotation = (this.virtualRotation -1 + 4) % 4;
       const newRotation = this.virtualRotation;
-      this.rotationSystem({x,y,newRotation});
+      if(this.rotationSystem({x,y,newRotation})){
+        this.virtualRotation =(this.virtualRotation +1) % 4;
+      }
     }
 
 
     /**
      * 移動先候補を順番にチェックし、回転した時の移動を決定
+     * @return {boolean} - 天井に当たったらtrue
      */
     rotationSystem(puyo){
       const checkDicts = {
@@ -129,6 +134,10 @@ export default class PuyoLogic {
       const checks = checkDicts[puyo.newRotation];
       for(const check in checks){
         if(this.isPositionValid(puyo.x+checks[check].x, puyo.y+checks[check].y, puyo.newRotation)){
+          if(this.checkCollisionCeiling(puyo.x+checks[check].x, puyo.y+checks[check].y)){
+            console.log("天井にぶつかった");
+            return true; //天井に当たったときは回転を無効化
+          }
           this.currentPuyo.x += checks[check].x;
           this.currentPuyo.y += checks[check].y;
           this.currentPuyo.rotation = puyo.newRotation;
@@ -167,11 +176,15 @@ export default class PuyoLogic {
       const { x, y, color1, color2, rotation } = this.currentPuyo;
 
       // 軸ぷよを盤面に書き込む
-      this.board[y][x] = color1;
+      if(y!=0){ //天井の段には書き込まない
+        this.board[y][x] = color1;
+      }
 
       // 子ぷよの位置を計算して盤面に書き込む
       const childPos = this.getChildPuyoPosition(x, y, rotation);
-      this.board[childPos.y][childPos.x] = color2;
+      if(childPos.y!=0){ //天井の段には書き込まない
+        this.board[childPos.y][childPos.x] = color2;
+      }
 
       this.currentPuyo = null; // 固定したら操作対象をなくす
     }
@@ -185,7 +198,6 @@ export default class PuyoLogic {
       const color1 = colorObj.color1;
       const color2 = colorObj.color2;
       this.nextTsumos.unshift(this.generateNextTsumo()); //新たにネクストを生成して追加
-      console.log(this.nextTsumos);
 
       this.currentPuyo = {
         x: 2,        // 盤面の中央上部
@@ -348,6 +360,18 @@ export default class PuyoLogic {
         }
         return false;
     }
+    /**
+     * 
+     * @param {Number} puyoX 
+     * @param {Number} puyoY 
+     * @return {boolean} - 天井に当たったらtrue
+     */
+    checkCollisionCeiling(puyoX, puyoY){ //一番上の行(1行目,14段目)に軸ぷよがぶつかったらいけない
+      if(Math.ceil(puyoY) <= 0){
+        return true;
+      }
+      return false;
+    }
     
     /**
      * 子ぷよの相対位置を取得する
@@ -377,7 +401,6 @@ export default class PuyoLogic {
         return {color1: this.tsumoManageList.pop(), color2: this.tsumoManageList.pop()};
       }else{
         this.makeListRandom(this.tsumoManageList); //配列の順番をランダムにする
-        console.log(this.tsumoManageList);
         return {color1: this.tsumoManageList.pop(), color2: this.tsumoManageList.pop()};
       }
       function createPileOfColors(){ //一巡用(4色なら128手,256色分)のツモの色の配列を生成
