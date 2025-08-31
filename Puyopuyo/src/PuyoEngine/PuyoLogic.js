@@ -140,6 +140,17 @@ export default class PuyoLogic {
           }
           this.currentPuyo.x += checks[check].x;
           this.currentPuyo.y += checks[check].y;
+          if(Math.abs(this.currentPuyo.rotation-puyo.newRotation)===2){ //回転が上下反転の時(挟まれているときの回転)の挙動
+            switch (puyo.newRotation){
+              case 0: //上を向いたとき
+                this.currentPuyo.y+=1;
+                break;
+              case 2: //下を向いたとき
+                this.currentPuyo.y-=1;
+                break;
+            }
+
+          }
           this.currentPuyo.rotation = puyo.newRotation;
           break;
         }
