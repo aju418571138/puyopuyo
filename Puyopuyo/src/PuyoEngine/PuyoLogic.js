@@ -237,10 +237,14 @@ export default class PuyoLogic {
      * 指定した座標のぷよと繋がっている同色のぷよのグループを探す
      * @param {string} startX - 探索を開始するX座標
      * @param {string} startY - 探索を開始するY座標
-     * @returns {Array<{x: string, y: string}>} - 繋がっているぷよの座標リスト
+     * @returns {[Array<{x: string, y: string}>,{color:string,number:Number}]} - 繋がっているぷよの座標リスト(インデックス0)、それの情報オブジェクト(インデックス1)
      */
     findConnectedPuyos(startX, startY) {
 
+      /**
+       * @type {Array<{color:string,number:Number}>} -消すぷよの数、色の情報オブジェクトの配列
+       */
+      let puyoInfo = {};
       const targetColor = this.board[startY][startX];
       if (targetColor === 0) return [];
 
@@ -272,23 +276,27 @@ export default class PuyoLogic {
           queue.push({ x: nx, y: ny });
         }
       }
-      return connected;
+      puyoInfo={color:targetColor,number:connected.length}
+      return [connected,puyoInfo];
     }
 
     /**
      * 盤面全体をチェックして、4つ以上繋がっているぷよを消す
-     * @returns {boolean} - ぷよを1つでも消したらtrue
+     * @returns {Array<{color:string,number:Number}>} - ぷよを1つでも消したら消したぷよの情報オブジェクトの配列を返す
+     * 
      */
     checkAndClearPuyos() {
         const puyosToClear = new Set();
         const checked = new Set();
+        const puyoToClearInfo = []; //消すぷよの色、数が入るオブジェクトの配列
 
         for (let y = 2; y < this.height + 2; y++) {
             for (let x = 0; x < this.width; x++) {
                 const key = `${x},${y}`;
                 if (this.board[y][x] !== 0 && !checked.has(key)) {
-                    const connected = this.findConnectedPuyos(x, y);
+                    const [connected,puyoInfo] = this.findConnectedPuyos(x, y);
                     if (connected.length >= 4) {
+                        puyoToClearInfo.push(puyoInfo);
                         connected.forEach(puyo => puyosToClear.add(`${puyo.x},${puyo.y}`));
                     }
                     connected.forEach(puyo => checked.add(`${puyo.x},${puyo.y}`));
@@ -301,7 +309,7 @@ export default class PuyoLogic {
                 const [x, y] = key.split(',').map(Number);
                 this.board[y][x] = 0;
             });
-            return true;
+            return puyoToClearInfo;
         }
         return false;
     }
