@@ -19,14 +19,9 @@ export default class PuyoController {
         this.isLandingProcessing = false;
         this.landCount = 0; // ぷよが着地してからのフレーム数をカウントする変数
         this.landed = false; // ぷよが着地したかどうかのフラグ
-        this.callBackObj = {
-            puyoGenerated: () => this.puyoGenerated(),
-            fallReset: () => this.fallReset(),
-            puyoLanded: () => this.puyoLanded(),
-        }; // PuyoLogicがコールバックするオブジェクトを格納するオブジェクト
 
         this.scene = scene; // Phaserのシーンオブジェクト
-        this.PuyoLogic = new PuyoLogic({...logicConfig, callbackObj: this.callBackObj}); // PuyoLogicのインスタンス
+        this.PuyoLogic = new PuyoLogic(logicConfig,this); // PuyoLogicのインスタンス
 
         // --- キーボード設定 ---
         this.cursors = this.scene.input.keyboard.createCursorKeys();
@@ -35,17 +30,16 @@ export default class PuyoController {
         this.rightKey=this.keys.X;
 
         // --- インターバル設定 ---
-        this.landInterval = 333; // ぷよが着地してから何ミリ秒で着地確定にするか
-        this.fallInterval = 333; // ミリ秒単位で落下間隔を設定
-        this.fallIntervalFast = 30; // ミリ秒単位で高速落下間隔を設定
-        this.fallIntervalNow = this.fallInterval; //現在の落下間隔
+        this.LandInterval = 333; // ぷよが着地してから何ミリ秒で着地確定にするか
+        this.FallInterval = 333; // ミリ秒単位で落下間隔を設定
+        this.FallIntervalFast = 30; // ミリ秒単位で高速落下間隔を設定
+        this.FallIntervalNow = this.FallInterval; //現在の落下間隔
         this.moveInterval = 30; // ミリ秒単位で左右移動の連続入力間隔を設定
         // --- ネクストツモを生成 ---
         this.PuyoLogic.nextTsumos.unshift(...this.PuyoLogic.generateFirstTsumo()); //最初のネクストを生成
         for(let i=2; i<this.PuyoLogic.nexts; i++){
             this.PuyoLogic.nextTsumos.unshift(this.PuyoLogic.generateNextTsumo()); //ネクストを生成
         }
-        
         this.PuyoLogic.spawnNewPuyo(); // 最初のぷよを生成
         this.puyoView = new PuyoView(scene, this.PuyoLogic); // PuyoViewのインスタンス
         this.isFastButtonPressed=false;
@@ -154,11 +148,11 @@ export default class PuyoController {
      * ぷよの落下を高速にする
      */
     fallFast(){
-        if(this.fallIntervalNow === this.fallIntervalFast) return; // すでに高速なら何もしない
+        if(this.FallIntervalNow === this.FallIntervalFast) return; // すでに高速なら何もしない
         this.fallTimer.remove();
-        this.fallIntervalNow = this.fallIntervalFast;
+        this.FallIntervalNow = this.FallIntervalFast;
         this.fallTimer = this.scene.time.addEvent({
-            delay: this.fallIntervalFast, // 高速落下間隔に設定
+            delay: this.FallIntervalFast, // 高速落下間隔に設定
             callback: this.PuyoLogic.fallOneStep, // PuyoLogicの落下関数を呼び出す
             callbackScope: this.PuyoLogic, // コールバックのスコープをPuyoLogicに設定
             loop: true, // ずっと繰り返す
@@ -168,11 +162,11 @@ export default class PuyoController {
      * ぷよの落下を通常に戻す
      */
     fallSlow(){
-        if(this.fallIntervalNow === this.fallInterval) return; // すでに通常速度なら何もしない
+        if(this.FallIntervalNow === this.FallInterval) return; // すでに通常速度なら何もしない
         this.fallTimer.remove();
-        this.fallIntervalNow = this.fallInterval;
+        this.FallIntervalNow = this.FallInterval;
         this.fallTimer = this.scene.time.addEvent({
-            delay: this.fallInterval, // 通常落下間隔に設定
+            delay: this.FallInterval, // 通常落下間隔に設定
             callback: ()=>{
                 this.PuyoLogic.fallOneStep(); // PuyoLogicの落下関数を呼び出す
                 if(this.isFastButtonPressed){
@@ -193,7 +187,7 @@ export default class PuyoController {
             this.fallTimer.remove();
         }
         this.fallTimer = this.scene.time.addEvent({
-            delay: this.fallIntervalNow, // 現在の落下間隔に設定
+            delay: this.FallIntervalNow, // 現在の落下間隔に設定
             callback: this.PuyoLogic.fallOneStep, // PuyoLogicの落下関数を呼び出す
             callbackScope: this.PuyoLogic, // コールバックのスコープをPuyoLogicに設定
             loop: true, // ずっと繰り返す
@@ -212,7 +206,7 @@ export default class PuyoController {
             return;
         }
         this.landCanceled=false; //着地が途中で解除されるのを検知する
-        await this.sleep(this.landInterval);
+        await this.sleep(this.LandInterval);
         if(this.landCanceled) {
             this.isLandingProcessing = false;
             return; //着地が途中で解除されたら設置処理を停止
@@ -246,6 +240,11 @@ export default class PuyoController {
             // 4つ以上繋がったぷよを消す
             const puyoToClearInfo = this.PuyoLogic.checkAndClearPuyos();
             if (puyoToClearInfo) {
+                if(this.PuyoLogic.allCleared){
+                    this.PuyoLogic.allCleared=false;
+                    console.log("全消しを消費しました")
+                    this.PuyoLogic.score+=2100;
+                }
                 chainCount++;
                 console.log(`${chainCount}連鎖！`);
                 const score = this.PuyoLogic.scoreCalculator(puyoToClearInfo,chainCount); //点数を計算する

@@ -2,16 +2,16 @@
 export default class PuyoLogic {
   /**
    * @param {object} options - 盤面の設定オプション
-   * @param {string} [options.width=6] - 盤面の列数
-   * @param {string} [options.height=12] - 盤面の行数（ぷよが表示されるエリア）
+   * @param {Number} [options.width=6] - 盤面の列数
+   * @param {Number} [options.height=12] - 盤面の行数（ぷよが表示されるエリア）
    * @param {string[]} [options.colors] - ぷよの色の配列
-   * @param {string} [options.size=40] - 1マスのサイズ (描画用)
-   * @param {string} [options.offsetX=100] - 盤面のX座標オフセット (描画用)
-   * @param {string} [options.offsetY=50] - 盤面のY座標オフセット (描画用)
+   * @param {Number} [options.size=40] - 1マスのサイズ (描画用)
+   * @param {Number} [options.offsetX=100] - 盤面のX座標オフセット (描画用)
+   * @param {Number} [options.offsetY=50] - 盤面のY座標オフセット (描画用)
    * @param {object[]} [options.deadTiles] - ゲームオーバーになるマス
-   * @param {object} callbackObj - PuyoControllerにコールバックするオブジェクトを格納するオブジェクト. コールバックするオブジェクトが増えたらここに追加する
    * @param {Number} [options.nexts=2] - ネクストの数
    * @param {object[]} [options.nextPos] - ネクストの表示位置とサイズの配列. {x: X座標, y: Y座標, size: サイズ}のオブジェクトを要素に持つ配列
+   * @param {class} PuyoController - PuyoControllerのクラス
   */
     constructor({
       // 盤面のサイズや、ぷよの色数、マスのサイズなどのデフォルト値を設定
@@ -29,13 +29,9 @@ export default class PuyoLogic {
       offsetX = 100,
       offsetY = 50,
       deadTiles = [{x:2, y:2}], //ここにぷよがたまったらゲームオーバー
-      callbackObj = { // PuyoControllerにオブジェクトする関数を格納するオブジェクト
-        fallReset: ()=>{}, //デフォルト値は空の関数
-        puyoGenerated: ()=>{},
-        puyoLanded: ()=>{},
-      },
       nexts = 2, //ネクストの数
-    }={}){
+    }={},PuyoController){
+      this.PuyoController=PuyoController; //親クラス(PuyoController)を取得
       /**
        * @type {Array<{color1: string, color2: string}>}
        */
@@ -46,6 +42,7 @@ export default class PuyoLogic {
       this.nexts = nexts; //ネクストの数
       this.nextPos = nextPos; //ネクストの表示位置
       this.score = 0; // ゲーム中の点数
+      this.allCleared = false; //全消ししたらtrueになるフラグ
       this.width = width; // 盤面の列数
       this.height = height; // 盤面の行数
       this.colors = colors; // ぷよの色の配列
@@ -53,7 +50,6 @@ export default class PuyoLogic {
       this.offsetX = offsetX; // 盤面のX座標オフセット(盤面左端の座標)
       this.offsetY = offsetY; // 盤面のY座標オフセット
       this.deadTiles = deadTiles; // ゲームオーバーの条件となるぷよの位置
-      this.callbackObj = callbackObj; // PuyoControllerにコールバックするオブジェクトを格納するオブジェクト
       // --- 盤面の状態 ---
       // 盤面の上部に見えない行を2行追加して、ぷよの出現や回転を処理しやすくする
       this.board = Array(this.height+2).fill(null).map(() => Array(this.width).fill(0));
@@ -172,9 +168,11 @@ export default class PuyoLogic {
       if (this.isPositionValid(x, y + 0.5, rotation)) {
         // 衝突しなければ1マス下に動かす
         this.currentPuyo.y+=0.5;
+        if(this.PuyoController.FallIntervalNow===this.PuyoController.FallIntervalFast){
+          if(Number.isInteger(this.currentPuyo.y)) this.score++;
+        }
       } else {
-        // 衝突したら、ぷよを着地させるコールバックを呼び出す
-        //return this.callbackObj.puyoLanded();
+        // 衝突
         return;
       }
       return false;
@@ -219,8 +217,8 @@ export default class PuyoLogic {
         color2: color2,
       };
       this.virtualRotation = this.currentPuyo.rotation; //回転できないときに回転方向を記憶しておくための変数を初期化
-      // コールバック関数を呼び出して、PuyoControllerにぷよ生成を通知
-      this.callbackObj.puyoGenerated();
+      // 関数を呼び出して、PuyoControllerにぷよ生成を通知
+      this.PuyoController.puyoGenerated();
     }
     
     /**
@@ -501,6 +499,23 @@ export default class PuyoLogic {
         }
         let score = 10*puyoNum*(cp+cb+gb);
         if(score===0) score =40; //4連結1連鎖の場合、40点とする
+        if(this.allClear()){
+            console.log("全消し");
+            this.allCleared = true;
+        }
         return score;
+    }
+    /**
+     * 全消しかを判定する
+     * @returns {boolean} - 全消しならtrue
+     */
+    allClear(){
+      const board = this.board;
+      for(const row of board){
+        for(const tile of row){
+          if(tile > 0) return false; //空でなかったらfalse
+        }
+      }
+      return true;
     }
 }
