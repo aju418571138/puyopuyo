@@ -54,6 +54,9 @@ export default class PuyoView {
 
         this.nextPuyoGroup = this.scene.add.group();
          //ネクストはコンテナに追加しない 盤面の外のため
+
+         //スコアの描画用(仮)
+        this.scoreText = this.scene.add.text(100, 50, "", { fontSize: '32px', fill: '#fff' });
     }
     update(){
 
@@ -124,5 +127,7 @@ export default class PuyoView {
             this.nextPuyoGroup.add(this.scene.add.circle(nextPosObj.x * TILE_SIZE + BOARD_OFFSET_X, nextPosObj.y * TILE_SIZE + BOARD_OFFSET_Y + TILE_SIZE*nextPosObj.size, (TILE_SIZE * nextPosObj.size) / 2, puyoColors[nextTsumos[index].color1]));
         }
 
+        //スコアの描画(仮)
+        this.scoreText.setText('score:' + this.PuyoLogic.score);
     }
 }

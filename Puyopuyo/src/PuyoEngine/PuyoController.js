@@ -248,10 +248,10 @@ export default class PuyoController {
             if (puyoToClearInfo) {
                 chainCount++;
                 console.log(`${chainCount}連鎖！`);
-                const score = this.scoreCalculator(puyoToClearInfo,chainCount); //点数を計算する
+                const score = this.PuyoLogic.scoreCalculator(puyoToClearInfo,chainCount); //点数を計算する
                 console.log(score);
-                this.totalScore += score;
-                console.log(`total score: ${this.totalScore}`);
+                this.PuyoLogic.score += score;
+                console.log(`total score: ${this.PuyoLogic.score}`);
                 // ぷよが消えたら、重力を適用してぷよを落とす
                 await this.sleep(300); // ぷよが消えるアニメーションの時間を待つ
                 this.PuyoLogic.applyGravity();
@@ -262,48 +262,6 @@ export default class PuyoController {
                 return;
             }
         }
-    }
-/**
- * 点数計算を行う
- * @param {[{color:string,number:Number}]} puyoInfoArray - 消えたぷよの色、連結数
- * @param {Number} chain - 計算するときの連鎖数
- * @returns {Number} - 点数を返す
- */
-    scoreCalculator(puyoInfoArray,chain){
-        const chainPower = [0,0,8,16,32,64,96,128,160,192,224,256,288,320,352,384,416,448,480,512]; //連鎖ボーナス(1~19連鎖)
-        const colorBonus = [0,0,3,6,12,24]; //色数ボーナス(1~5色)
-        const groupBonus = [0,0,0,0,0,2,3,4,5,6,7,10];  //連結ボーナス(1~11連結)
-        //連鎖、色数、連結ボーナスの変数
-        let cp = 0;
-        let cb = 0;
-        let gb = 0;
-        let colorsNum = 0; //同時に消した色の種類の数
-        let colors = [];
-        let puyoNum = 0; //消えたぷよの数
-        for(const puyoInfoObj of puyoInfoArray){
-            colors.push(puyoInfoObj.color);
-            puyoNum += puyoInfoObj.number;
-            //色数が色数ボーナスに用意されてない程多いとき
-            if(puyoInfoObj.number >= groupBonus.length){
-                gb += 10; //12連結以上は連結ボーナス+10
-            }else{
-                gb += groupBonus[puyoInfoObj.number];
-            }
-        }
-        colorsNum = [...new Set(colors)].length; //色の種類の数
-        if(colorsNum >= colorBonus.length){
-            cb += 3*(2**(colorsNum-2));
-        }else{
-            cb += colorBonus[colorsNum];
-        }
-        if(chain >= chainPower.length){
-            cp += 32*(chain - 3);
-        }else{
-            cp += chainPower[chain];
-        }
-        let score = 10*puyoNum*(cp+cb+gb);
-        if(score===0) score =40; //4連結1連鎖の場合、40点とする
-        return score;
     }
 
     /**
