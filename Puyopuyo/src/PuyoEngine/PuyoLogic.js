@@ -116,6 +116,36 @@ export default class PuyoLogic {
       }
     }
 
+    /**
+     * AIが考えた手に従って、ぷよを実際に操作する関数
+     * @param {object} move - { rotation: 回転回数, x: 目標X座標 }
+     */
+    performAIMove(move) {
+      if (!this.currentPuyo || !move) return;
+      
+      let targetRotation = move.rotation;
+      while (this.currentPuyo.rotation !== targetRotation) {
+        this.rotatePuyo();
+      }
+
+      while (this.currentPuyo.x < move.x) {
+        this.movePuyoRight();
+      }
+      while (this.currentPuyo.x > move.x) {
+        this.movePuyoLeft();
+      }
+    }
+
+    /**
+     * AIが次にどの手を指すかを考えるメイン関数
+     */
+    thinkNextMove() {
+      // このメソッドは実際にはAILogic.jsの関数を呼び出すための窓口となるか、
+      // PuyoController側で直接AILogic.jsの関数を呼び出す。
+      // 今回はPuyoControllerで直接呼び出すため、このメソッドは厳密には不要だが、
+      // 役割分担として残しておいても良い。
+      // ここでは、AIの思考ロジックがPuyoLogicの外にあることを示す。
+    }
 
     /**
      * 移動先候補を順番にチェックし、回転した時の移動を決定

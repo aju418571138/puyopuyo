@@ -19,7 +19,9 @@ export default class SinglePlayMenuScene extends Phaser.Scene {
       fontSize: '32px', color: '#ffffff', backgroundColor: '#555555', padding: { x: 20, y: 10 }
     }).setOrigin(0.5).setInteractive();
     aiButton.on('pointerdown', () => {
-      console.log('AI対戦は現在準備中です'); // 今はコンソールにメッセージを出すだけ
+      // AIモードでGameSceneを開始
+      this.scene.start('GameScene', { isAIMode: true });
+      console.log('AI対戦プレイを開始します');
     });
 
     // 練習プレイボタン

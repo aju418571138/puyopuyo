@@ -2,6 +2,7 @@
 import Phaser from 'phaser';
 import PuyoLogic from './PuyoLogic.js';
 import PuyoView from './PuyoView.js';
+import { thinkNextMove } from './AILogic.js';
 export default class PuyoController {
     /**
      * PuyoControllerのコンストラクタ
@@ -10,11 +11,13 @@ export default class PuyoController {
      * @param {object} object.logicConfig - PuyoLogicの設定オブジェクト. 空の場合、PuyoLogicのコンストラクタのデフォルト値が適用
      * 
      */
-    constructor({scene, logicConfig = {}}={}){ // logicConfigはPuyoLogicの設定オブジェクト
-        
+    constructor({scene, logicConfig = {}, isAIMode = false}={}){ // logicConfigはPuyoLogicの設定オブジェクト
+                                                                 // isAIModeを受け取る  
         if(!scene){
             throw new Error("PuyoControllerのコンストラクタにPhaserのシーンオブジェクトを渡してください");
         }
+        this.isAIMode = isAIMode;// AIモードかどうかのフラグを保存
+        this.aiHasMoved = false;  // AIが操作済みかのフラグ
         this.totalScore = 0; //点数
         this.isLandingProcessing = false;
         this.landCount = 0; // ぷよが着地してからのフレーム数をカウントする変数
@@ -52,6 +55,7 @@ export default class PuyoController {
     
     puyoGenerated(){
         //console.log("PuyoController: ぷよが生成されました");
+        this.aiHasMoved = false; 
         this.landCanceled=false;
         this.landed=false;
         this.falled = false; // 新しいぷよが生成されたので落下フラグをリセット
@@ -64,9 +68,20 @@ export default class PuyoController {
     }
 
     update(){
-        this.puyoView.update(); // PuyoViewの更新-常に描画
-        // --- キー入力の処理 ---
-        if(Phaser.Input.Keyboard.JustDown(this.cursors.left)){
+        this.puyoView.update();
+
+        if (this.isAIMode) {
+            // --- AIの操作 ---
+            if (this.PuyoLogic.currentPuyo && !this.aiHasMoved) {
+                const move = thinkNextMove(this.PuyoLogic);
+                this.PuyoLogic.performAIMove(move);
+                this.aiHasMoved = true;
+                this.fallFast();
+                this.isFastButtonPressed = true;
+            }
+        } else {
+            // --- 人間プレイヤーの操作 ---
+            if(Phaser.Input.Keyboard.JustDown(this.cursors.left)){
             this.PuyoLogic.movePuyoLeft();
             this.moveLeftTimer = this.scene.time.addEvent({
                 delay: this.moveInterval, // ミリ秒単位で左右移動の連続入力間隔を設定
@@ -120,8 +135,9 @@ export default class PuyoController {
             this.fallSlow();
             this.isFastButtonPressed=false;
         }
+        }
 
-        // --- 着地の判定 ---
+        // --- 着地の判定（人間とAIで共通の処理） ---
         this.landed = false; // フレームごとにリセット
         if(this.PuyoLogic.currentPuyo){ // currentPuyoが存在する場合のみ判定
             const {x,y,rotation} = this.PuyoLogic.currentPuyo;
@@ -141,8 +157,7 @@ export default class PuyoController {
             }
             this.landCount=0;
         }
-
-    }
+    }    
 
     /**
      * ぷよの落下を高速にする
@@ -222,7 +237,6 @@ export default class PuyoController {
 
         // ゲームオーバー判定
         if (this.PuyoLogic.isGameOver()) {
-          console.log("GAME OVER");
           this.PuyoLogic.currentPuyo = null; // ゲームオーバー後は操作不能に
           return true;
         }
