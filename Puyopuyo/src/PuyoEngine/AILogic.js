@@ -1,60 +1,40 @@
 /**
  * AIが次にどの手を指すかを考えるメイン関数。
  * 待機ぷよを考慮した2手読みを行う。
- * @param {PuyoLogic} puyoLogic - 現在のゲームロジックのインスタンス。
- * @returns {object} - 最も評価の高い手 { rotation: 回転の回数, x: 目標のX座標 }。
  */
 export function thinkNextMove(puyoLogic) {
-  // --- AIの賢さと思考時間に関わる設定 ---
-  // 候補手をいくつに絞るか。数を増やすとAIは強くなりますが、処理が重くなります。(推奨: 3〜5)
-  const BEAM_WIDTH = 4; 
-
+  const BEAM_WIDTH = 4;
   const currentPuyo = puyoLogic.currentPuyo;
-  
-  // --- 待機ぷよ（ネクストぷよ）の取得 ---
-  // PuyoLogic.jsの実装より、pop()で現在のぷよを取り出すため、
-  // 次のぷよは配列の末尾から2番目になります。
+
   if (puyoLogic.nextTsumos.length < 2) {
-    // ぷよが足りない場合は、とりあえず現在のぷよだけで判断
     return findBestMoveForPuyo(puyoLogic.board, currentPuyo).move;
   }
   const nextPuyo = puyoLogic.nextTsumos[puyoLogic.nextTsumos.length - 2];
 
-  // --- ステップ1：現在のぷよの全パターンを評価し、有望な候補手を絞り込む ---
   const candidateMoves = findBestCandidateMoves(puyoLogic.board, currentPuyo, BEAM_WIDTH);
 
   if (candidateMoves.length === 0) {
-    return { rotation: 0, x: 2 }; // 万が一有効な手がない場合
+    return { rotation: 0, x: 2 };
   }
 
-  // --- ステップ2：各候補手について、待機ぷよを置いた未来を評価する ---
-  let bestMove = candidateMoves[0].move; // 最善手（仮）
+  let bestMove = candidateMoves[0].move;
   let maxFinalScore = -Infinity;
 
   for (const candidate of candidateMoves) {
     const boardAfterMove1 = candidate.boardAfterMove;
-    
-    // 待機ぷよを置いた場合に得られる最高の評価点を計算
     const bestMoveForNextPuyo = findBestMoveForPuyo(boardAfterMove1, nextPuyo);
-    
-    // 最終スコア = 1手目の評価点 + 2手目の最高評価点
-    // これにより、未来が最も有望な1手目を探す
     const finalScore = candidate.score + bestMoveForNextPuyo.score;
-    
+
     if (finalScore > maxFinalScore) {
-        maxFinalScore = finalScore;
-        bestMove = candidate.move;
+      maxFinalScore = finalScore;
+      bestMove = candidate.move;
     }
   }
-  
   return bestMove;
 }
 
 /**
  * 特定のぷよと盤面に対して、最も評価の高い手を返す
- * @param {Array<Array<number>>} board
- * @param {object} puyo
- * @returns {{move: object, score: number}}
  */
 function findBestMoveForPuyo(board, puyo) {
     let bestMove = { rotation: 0, x: 2 };
@@ -80,10 +60,6 @@ function findBestMoveForPuyo(board, puyo) {
 
 /**
  * 特定のぷよと盤面に対して、評価の高い候補手をいくつか返す
- * @param {Array<Array<number>>} board
- * @param {object} puyo
- * @param {number} count - 候補手の数
- * @returns {Array<{move: object, score: number, boardAfterMove: Array<Array<number>>}>}
  */
 function findBestCandidateMoves(board, puyo, count) {
     let moveEvaluations = [];
@@ -105,21 +81,103 @@ function findBestCandidateMoves(board, puyo, count) {
 }
 
 
-// ##############################################
-// ### AIの評価関数とシミュレーション用ヘルパー関数 ###
-// ##############################################
+// #################################################
+// ### GTR特化型AIの頭脳：新しい評価関数 ##############
+// #################################################
 
 /**
- * 盤面を評価し、「連鎖」につながる形にボーナスを与える
+ * GTRの形になっているかを評価し、スコアを返す (解説の「完成度スコア」に相当)
+ * @param {Array<Array<number>>} board
+ * @returns {number} GTRの完成度に応じたスコア
  */
-function calculateChainPotential(board) {
+function calculateGTRScore(board) {
+    const height = board.length;
+    const H = height - 1; // 一番下の行のインデックス
+    let score = 0;
+
+    // GTRのキーとなるぷよの色を特定 (2列目の底)
+    const keyColor = board[H][1];
+    if (keyColor === 0) return 0; // GTRの土台がまだない
+
+    // GTR基本構造のチェック
+    // 1. (1, H-1)がキーぷよと同じ色か (発火点の真上)
+    if (board[H - 1][1] === keyColor) score += 200;
+    // 2. (2, H) のぷよがキーぷよと違う色か (折り返しの土台)
+    if (board[H][2] !== 0 && board[H][2] !== keyColor) score += 150;
+    // 3. (2, H-1)が(2,H)と同じ色か (折り返しの壁)
+    if (board[H][2] !== 0 && board[H - 1][2] === board[H][2]) score += 250;
+    // 4. (2, H-2)が(2,H)と同じ色か (折り返しの壁)
+    if (board[H][2] !== 0 && board[H - 2][2] === board[H][2]) score += 300;
+
+    // 発火点(1, H-2)が空いているかは最重要
+    if (board[H - 2][1] === 0) {
+        score += 500; // 発火点が空いていれば超高評価
+    } else if (board[H - 2][1] === keyColor) {
+        score -= 100; // 発火点にキーぷよを置くのはまだ早い（暴発の可能性）
+    } else {
+        score -= 2000; // 発火点が違う色で埋まっていたら致命的なので超減点
+    }
+    
+    return score;
+}
+
+
+/**
+ * 盤面状態を点数化する評価関数 (GTR特化版)
+ */
+function evaluate(board, chainCount, clearedCount) {
+    // 即時的な利益：連鎖が発生したら、それが最優先
+    if (chainCount > 0) {
+        return 10000 * chainCount; // GTR構築より連鎖を優先
+    }
+
+    // --- GTRの評価基準 ---
+    // 1. GTR完成度スコア
+    let score = calculateGTRScore(board);
+
+    // 2. 伸ばし余地：右側のスペースが空いているかを評価
+    let rightSideMaxHeight = 0;
+    for (let x = 3; x < board[0].length; x++) {
+        for (let y = 2; y < board.length; y++) {
+            if (board[y][x] !== 0) {
+                const colHeight = board.length - y;
+                if (colHeight > rightSideMaxHeight) {
+                    rightSideMaxHeight = colHeight;
+                }
+                break;
+            }
+        }
+    }
+    score -= Math.pow(rightSideMaxHeight, 2) * 5; // 右側が高いほど減点
+
+    // 3. 連鎖ポテンシャル（右側のみを対象）
+    score += calculateChainPotential(board, 3); // 3列目以降を評価
+
+    // 4. 全体のリスク評価
+    let maxHeight = 0;
+    // ... (maxHeightを計算するロジックは省略)
+    if (rightSideMaxHeight > maxHeight) maxHeight = rightSideMaxHeight;
+    
+    if (maxHeight > 8) {
+        score -= Math.pow(maxHeight, 3);
+    }
+
+    return score;
+}
+
+/**
+ * 盤面を評価し、「連鎖」につながる形にボーナスを与える（評価範囲の指定を追加）
+ * @param {Array<Array<number>>} board
+ * @param {number} startCol - 評価を開始する列のインデックス
+ */
+function calculateChainPotential(board, startCol = 0) {
     let potentialScore = 0;
     const visited = new Set();
     const height = board.length;
     const width = board[0].length;
 
     for (let y = 2; y < height; y++) {
-        for (let x = 0; x < width; x++) {
+        for (let x = startCol; x < width; x++) {
             const puyoColor = board[y][x];
             if (puyoColor === 0) continue;
             if (y < height - 1) {
@@ -141,45 +199,10 @@ function calculateChainPotential(board) {
     return potentialScore;
 }
 
-/**
- * 盤面状態を点数化する評価関数
- */
-function evaluate(board, chainCount, clearedCount) {
-    let score = 0;
-    if (chainCount > 0) {
-        score += Math.pow(chainCount, 3) * 100;
-        score += clearedCount * 20;
-        return score;
-    }
-    score += calculateChainPotential(board);
-    let maxHeight = 0;
-    let deadSpaces = 0;
-    const height = board.length;
-    const width = board[0].length;
-    for (let x = 0; x < width; x++) {
-        for (let y = 2; y < height; y++) {
-            if (board[y][x] !== 0) {
-                const colHeight = height - y;
-                if (colHeight > maxHeight) maxHeight = colHeight;
-                for (let under_y = y + 1; under_y < height; under_y++) {
-                    if (board[under_y][x] === 0) deadSpaces++;
-                }
-                break;
-            }
-        }
-    }
-    if (maxHeight > 3) {
-        score -= Math.pow(maxHeight, 2.8);
-    }
-    if (maxHeight > 8) {
-        score -= 350;
-    }
-    score -= deadSpaces * 40;
-    return score;
-}
 
-// --- 以下、PuyoLogic.jsから移植・改造したシミュレーション用関数 ---
-
+// --- 以下、シミュレーション用ヘルパー関数群 ---
+// (generatePossibleMoves, getLandedY, placePuyo, isPositionValid, checkCollision, 
+//  simulateChain, checkAndFindClearPuyos, findConnectedPuyos, applyGravity, getChildPuyoPosition)
 function generatePossibleMoves(puyoLogic) {
   const moves = [];
   for (let rotation = 0; rotation < 4; rotation++) {
